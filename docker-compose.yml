@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  cetu-dashboard:
+    build: .
+    container_name: cetu-dashboard
+    ports:
+      - "8766:8766"
+    environment:
+      MYSQL_HOST: 192.168.16.38
+      MYSQL_PORT: "3306"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: creative testing data
+    restart: unless-stopped

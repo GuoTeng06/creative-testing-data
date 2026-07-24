@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.git/
+.gitignore
+Dockerfile
+docker-compose.yml
+.dockerignore
+start_backend.bat
+*.bat
+*.ps1
+rpa/
+mysql_proxy.py
