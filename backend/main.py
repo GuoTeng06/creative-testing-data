@@ -14,6 +14,7 @@ from data_loader import (
     get_trends, get_product_aggregates
 )
 import requests
+from operation_api import router as operation_router
 
 app = FastAPI(title="测图数据看板 API", version="2.0.0")
 
@@ -23,6 +24,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(operation_router)
 
 FRONTEND_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend', 'index.html')
 
