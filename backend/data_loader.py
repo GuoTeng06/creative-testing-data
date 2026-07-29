@@ -10,7 +10,7 @@ DB_CONFIG = {
     'host': os.environ.get('MYSQL_HOST', '192.168.16.38'),
     'port': int(os.environ.get('MYSQL_PORT', '3306')),
     'user': os.environ.get('MYSQL_USER', 'root'),
-    'password': os.environ.get('MYSQL_PASSWORD', ''),
+    'password': os.environ.get('MYSQL_PASSWORD', 'root'),
     'database': os.environ.get('MYSQL_DATABASE', 'creative testing data'),
     'charset': 'utf8mb4',
     'connect_timeout': 5,

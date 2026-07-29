@@ -927,6 +927,7 @@ createApp({
       swapPreview.value=await r.json();
       swapStatus.value=null;
     };
+    let swapStatusTimer = null;
     const executeSwap=async()=>{
       if(!swapSource.value||!swapTargets.value.length||!swapSelectedImages.value.length)return;
       swapExecuting.value=true;swapStatus.value=null;
@@ -938,18 +939,44 @@ createApp({
           signal:swapAbortController.signal
         });
         const result=await r.json();
-        swapStatus.value={success:result.success,message:result.success?'换图命令已发送至RPA':(result.error||'执行失败')};
+        if(result.success && result.job_id){
+          swapStatus.value={success:true,message:'RPA已启动 ('+result.job_id+')'};
+          // poll for progress
+          swapStatusTimer=setInterval(async()=>{
+            try{
+              const pr=await fetch(API+'/swap-image/status/'+result.job_id);
+              const progress=await pr.json();
+              if(progress.status==='done'){
+                clearInterval(swapStatusTimer);
+                const ok=progress.ok||0,fail=progress.fail||0,filled=progress.total_filled||0;
+                swapStatus.value={success:fail===0,message:'完成: '+ok+'/'+(ok+fail)+' 商品成功, 共填入'+filled+'张图'};
+                swapExecuting.value=false;
+              }else if(progress.status==='failed'){
+                clearInterval(swapStatusTimer);
+                swapStatus.value={success:false,message:'失败: '+(progress.error||'未知错误')};
+                swapExecuting.value=false;
+              }else if(progress.status==='running'){
+                swapStatus.value={success:true,message:'进行中... '+progress.completed+'/'+progress.total_targets+(progress.current?' 当前:'+progress.current:'')};
+              }
+            }catch(e){/* polling error, ignore */}
+          },2000);
+        }else{
+          swapStatus.value={success:false,message:result.error||'执行失败'};
+          swapExecuting.value=false;
+        }
       }catch(e){
         if(e.name==='AbortError'){
-          swapStatus.value={success:false,message:'已停止换图'};
+          swapStatus.value={success:false,message:'已停止'};
         }else{
           swapStatus.value={success:false,message:'请求失败: '+e.message};
         }
+        swapExecuting.value=false;
       }
-      swapExecuting.value=false;swapAbortController=null;
     };
     const stopSwap=()=>{
       if(swapAbortController){swapAbortController.abort();swapAbortController=null;}
+      if(swapStatusTimer){clearInterval(swapStatusTimer);swapStatusTimer=null;}
+      swapExecuting.value=false;
     };
     const swapImageTypeColor=(type)=>{
       const map={'主轮播图':'#1976d2','副轮播图':'#00897b','SKU 图':'#f57c00','白底图':'#7e57c2','自定义图':'#d32f2f'};

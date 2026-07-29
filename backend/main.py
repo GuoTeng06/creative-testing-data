@@ -195,11 +195,18 @@ SLOT_IMAGE_TYPES = {'主轮播图', '副轮播图'}
 
 def _get_product_images(product_id, data):
     creatives = get_creatives_by_product(product_id, data)
+    # 先按净交易额排序，确保去重时保留数据最好的那条
+    creatives.sort(key=lambda x: (x.get('net_transaction', 0) or 0), reverse=True)
     main_images = []
     other_images = []
+    seen_urls = set()
     for c in creatives:
+        url = c.get('image_url', '')
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
         img = {
-            "image_url": c.get('image_url', ''),
+            "image_url": url,
             "image_type": c.get('image_type', ''),
             "status": c.get('status', ''),
             "net_transaction": c.get('net_transaction', 0) or 0,
@@ -268,27 +275,63 @@ def api_swap_execute(payload: dict):
     if not source_imgs:
         return {"success": False, "error": "找不到源图片"}
 
+    # 计算每个目标商品的空图位数（有数据的图不碰）
+    targets = []
+    for tid in target_ids:
+        target_main, target_other = _get_product_images(tid, data)
+        # 有数据的轮播图数（有曝光/点击/交易额的才算）
+        data_slots = len([img for img in target_main
+                          if (img.get('impressions', 0) or 0) > 0
+                          or (img.get('clicks', 0) or 0) > 0
+                          or (img.get('transaction_amount', 0) or 0) > 0])
+        empty_slots = max(0, TOTAL_IMAGE_SLOTS - data_slots)
+        targets.append({
+            "product_id": tid,
+            "empty_slots": empty_slots,
+        })
+
     swap_command = {
-        "action": "swap_to_empty_slots",
+        "action": "swap_image",
         "source": {
             "product_id": source_id,
             "images": [{"image_url": u, "image_type": s.get('image_type', '')}
                        for u, s in zip(source_image_urls, source_imgs)],
         },
-        "targets": [{"product_id": tid} for tid in target_ids],
-        "note": f"将{len(source_image_urls)}张源图替换到{len(target_ids)}个目标商品的空图位",
+        "targets": targets,
     }
 
     try:
         resp = requests.post(f"{RPA_TARGET}/execute", json=swap_command, timeout=10)
         if resp.status_code == 200:
-            return {"success": True, "result": resp.json()}
+            result = resp.json()
+            job_id = result.get("job_id", "")
+            return {
+                "success": True,
+                "job_id": job_id,
+                "status": "started",
+                "message": result.get("message", "已启动"),
+            }
         else:
-            return {"success": False, "error": f"RPA 返回 {resp.status_code}: {resp.text[:200]}"}
+            return {"success": False, "error": f"RPA returned {resp.status_code}: {resp.text[:200]}"}
     except requests.exceptions.ConnectionError:
-        return {"success": False, "error": f"无法连接到目标电脑 {RPA_TARGET}，请确认监听器已启动"}
+        return {"success": False, "error": f"Cannot connect to {RPA_TARGET}, is listener running?"}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+@app.get("/api/swap-image/status/{job_id}")
+def api_swap_status(job_id: str):
+    """Poll RPA progress"""
+    try:
+        resp = requests.get(f"{RPA_TARGET}/progress/{job_id}", timeout=5)
+        if resp.status_code == 200:
+            return resp.json()
+        elif resp.status_code == 404:
+            return {"status": "not_found", "error": "Job not found"}
+        else:
+            return {"status": "error", "error": f"Listener returned {resp.status_code}"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 if __name__ == '__main__':
