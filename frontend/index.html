@@ -143,11 +143,174 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .pill:hover{background:var(--bg4);color:var(--text)}
 .pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .tip{font-size:13px;color:var(--text2);margin-bottom:12px}
+.page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:16px}
+.page-heading h2{margin-bottom:4px}
+.page-subtitle{font-size:13px;color:var(--text2);line-height:1.6}
+.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 12px}
+.section-heading h3{font-size:15px;margin:0}
+.section-heading span{font-size:12px;color:var(--text2)}
+.core-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.core-kpi-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.core-kpi-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.core-kpi-card:nth-child(2)::before{background:var(--accent2)}
+.core-kpi-card:nth-child(3)::before{background:#7c3aed}
+.core-kpi-card:nth-child(4)::before{background:var(--orange)}
+.core-kpi-card .label{font-size:12px;color:var(--text2);margin-bottom:8px}
+.core-kpi-card .value{font-size:28px;font-weight:750;letter-spacing:-.02em}
+.core-kpi-card .hint{font-size:11px;color:var(--text2);margin-top:7px}
+.business-details{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);margin-top:16px;overflow:hidden}
+.business-details>summary{list-style:none;padding:15px 18px;font-size:13px;font-weight:650;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.business-details>summary::-webkit-details-marker{display:none}
+.business-details>summary::after{content:'展开';font-size:11px;color:var(--accent);font-weight:500}
+.business-details[open]>summary::after{content:'收起'}
+.business-content{border-top:1px solid var(--bg3);padding:16px 18px}
+.business-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.business-item{background:var(--bg3);border-radius:8px;padding:12px}
+.business-item span{display:block;font-size:11px;color:var(--text2);margin-bottom:6px}
+.business-item strong{font-size:17px}
+.secondary-action{border:1px solid var(--bg4);background:#fff;color:var(--accent);border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600}
+.analysis-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.table-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow-sm);overflow:auto}
+.core-badge{display:inline-flex;align-items:center;background:#eff6ff;color:var(--accent);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:650}
+.metric-toggle{display:flex;gap:5px;padding:3px;background:var(--bg3);border-radius:8px}
+.metric-toggle button{border:0;background:transparent;color:var(--text2);border-radius:6px;padding:6px 10px;font-size:12px}
+.metric-toggle button.active{background:#fff;color:var(--accent);box-shadow:var(--shadow-sm);font-weight:650}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.insight-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow-sm)}
+.insight-card h3{font-size:14px;margin:0 0 4px}
+.insight-card>p{font-size:11px;color:var(--text2);margin:0 0 12px}
+.insight-list{display:flex;flex-direction:column;gap:7px}
+.insight-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:9px;border:0;background:var(--bg3);border-radius:8px;padding:9px 10px;text-align:left;color:var(--text)}
+.insight-rank{width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:6px;color:var(--accent);font-size:11px;font-weight:700}
+.insight-product{min-width:0}
+.insight-product strong,.insight-product small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.insight-product strong{font-size:12px}.insight-product small{font-size:10px;color:var(--text2);margin-top:2px}
+.insight-metric{text-align:right}.insight-metric strong,.insight-metric small{display:block}.insight-metric strong{font-size:13px}.insight-metric small{font-size:10px;color:var(--text2);margin-top:2px}
+.creative-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-2px 0 12px}
+.creative-toolbar label{font-size:12px;color:var(--text2)}
+.creative-toolbar select{background:#fff;color:var(--text);border:1px solid var(--bg4);border-radius:var(--radius-md);padding:6px 10px;font-size:12px}
+.creative-rank{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;background:#eff6ff;color:var(--accent);font-size:10px;font-weight:700;margin-right:5px}
+.creative-business{margin-top:10px;border-top:1px dashed var(--bg4);padding-top:8px}
+.creative-business summary{cursor:pointer;color:var(--text2);font-size:11px}
+.creative-business .metrics{margin-top:7px}
+@media(max-width:1050px){
+  .core-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .business-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .insight-grid{grid-template-columns:1fr}
+}
+/* Swap workspace */
+.swap-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.swap-heading h2{margin-bottom:4px}
+.swap-shared-filter{margin-bottom:16px}
+.swap-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.swap-product-grid>.swap-panel{min-width:0}
+.swap-panel{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
+.swap-panel-head{padding:16px 18px;border-bottom:1px solid var(--bg3)}
+.swap-panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.swap-panel-title h3{font-size:15px;margin:0}
+.swap-count{font-size:12px;color:var(--text2);background:var(--bg3);padding:4px 9px;border-radius:999px}
+.swap-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:9px;margin-top:13px}
+.swap-filters input,.swap-filters select{width:100%;background:#fff;color:var(--text);border:1px solid var(--bg4);border-radius:var(--radius-md);padding:8px 10px;font-size:12px}
+.swap-filters input:focus,.swap-filters select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.swap-date-picker{position:relative;min-width:0}
+.swap-date-trigger{width:100%;height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;color:var(--text);border:1px solid var(--bg4);border-radius:var(--radius-md);padding:0 10px;font-size:12px;white-space:nowrap;overflow:hidden}
+.swap-date-trigger.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.swap-date-trigger span:first-child{overflow:hidden;text-overflow:ellipsis}
+.swap-calendar-popover{position:absolute;z-index:50;right:0;top:calc(100% + 8px);width:560px;background:#fff;border:1px solid #dfe3e8;border-radius:4px;box-shadow:0 12px 32px rgba(15,23,42,.16);display:grid;grid-template-columns:100px 1fr;overflow:hidden;color:#30343b}
+.swap-date-shortcuts{border-right:1px solid #e7e9ed;padding:6px 0;background:#fff}
+.swap-date-shortcuts button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:8px 16px;color:#60656d;font-size:12px}
+.swap-date-shortcuts button:hover,.swap-date-shortcuts button.active{background:#e8f5ff;color:#1687f8;font-weight:600}
+.swap-calendar-main{padding:12px 14px 0}
+.swap-calendar-nav{display:grid;grid-template-columns:28px 1fr 1fr 28px;align-items:center;margin-bottom:8px}
+.swap-calendar-nav strong{text-align:center;font-size:12px}
+.swap-calendar-nav button{border:0;background:transparent;color:#9aa0a6;font-size:20px;line-height:28px;padding:0}
+.swap-calendar-months{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.swap-calendar-week,.swap-calendar-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.swap-calendar-week span{height:26px;display:flex;align-items:center;justify-content:center;color:#a2a7ae;font-size:11px}
+.swap-calendar-day{height:28px;border:0;background:transparent;color:#30343b;font-size:11px;padding:0}
+.swap-calendar-day:hover:not(:disabled){background:#eaf5ff;color:#1687f8}
+.swap-calendar-day.outside{color:#d2d5da}
+.swap-calendar-day.in-range{background:#eff7ff}
+.swap-calendar-day.edge{background:#1687f8;color:#fff}
+.swap-calendar-day:disabled{cursor:default}
+.swap-calendar-footer{grid-column:1/-1;border-top:1px solid #e7e9ed;margin:10px -14px 0;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.swap-calendar-footer strong{color:#1687f8;font-weight:600}
+.swap-date-clear{border:0;background:transparent;color:var(--text2);font-size:12px;padding:3px 6px}
+.swap-table-wrap{width:100%;min-width:0;max-height:480px;overflow:auto;border-bottom:1px solid var(--bg3)}
+.swap-table{min-width:1040px;border:0;border-radius:0}
+.swap-compact-table-wrap{max-height:500px}
+.swap-compact-table{min-width:980px}
+.swap-table th,.swap-table td{white-space:nowrap;padding:8px}
+.swap-table tbody tr{cursor:pointer}
+.swap-table tbody tr.active td{background:#eff6ff}
+.swap-table .source-thumb{width:46px;height:46px;border-radius:6px;object-fit:cover;background:var(--bg3);display:block}
+.swap-link{border:0;background:transparent;color:var(--accent);font-weight:600;padding:4px 0}
+.swap-memory{padding:16px 18px;border-bottom:1px solid var(--bg3)}
+.swap-memory-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.swap-memory-head h3{font-size:14px;margin:0}
+.swap-memory-list{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;min-height:84px}
+.swap-memory-card{width:82px;flex:0 0 82px;position:relative}
+.swap-memory-card img{width:82px;height:64px;object-fit:cover;border-radius:6px;border:2px solid var(--accent);display:block}
+.swap-memory-card small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:10px;margin-top:4px}
+.swap-memory-remove{position:absolute;right:-4px;top:-5px;width:19px;height:19px;border:0;border-radius:50%;background:var(--red);color:#fff;line-height:19px;padding:0;font-size:11px}
+.swap-memory-empty{display:flex;align-items:center;justify-content:center;width:100%;min-height:72px;border:1px dashed var(--bg4);border-radius:8px;color:var(--text2);font-size:12px}
+.swap-actions{padding:16px 18px}
+.swap-workflow-panel{margin-top:16px;display:grid;grid-template-columns:minmax(320px,.8fr) minmax(420px,1.2fr)}
+.swap-workflow-panel .swap-memory{border-bottom:0;border-right:1px solid var(--bg3)}
+.swap-targets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.swap-target-image-summary{display:flex;flex-direction:column;gap:7px;margin:10px 0 12px;padding:10px;background:var(--bg3);border-radius:8px}
+.swap-target-image-group{display:flex;align-items:center;gap:8px;min-width:0}
+.swap-target-image-group strong{width:112px;flex:0 0 112px;font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.swap-target-thumb-list{display:flex;gap:5px;overflow-x:auto}
+.swap-target-thumb-list img{width:46px;height:38px;object-fit:cover;border-radius:5px;border:2px solid var(--orange);background:#fff}
+.swap-action-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.swap-btn{border:0;border-radius:6px;padding:8px 14px;color:#fff;font-size:13px;font-weight:600}
+.swap-btn.primary{background:var(--accent)}
+.swap-btn.secondary{background:var(--accent2)}
+.swap-btn.danger{background:var(--red)}
+.swap-btn:disabled{opacity:.5;cursor:not-allowed}
+.swap-source-summary{font-size:12px;color:var(--text2);line-height:1.65;margin-top:8px}
+.swap-image-list{padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.swap-image-row{display:grid;grid-template-columns:24px 96px 1fr;gap:10px;align-items:center;border:1px solid var(--bg4);border-radius:9px;padding:9px;cursor:pointer;transition:border-color .15s,background .15s}
+.swap-image-row:hover{border-color:#93c5fd}
+.swap-image-row.selected{border-color:var(--accent);background:#eff6ff}
+.swap-image-row input{width:17px;height:17px;accent-color:var(--accent)}
+.swap-image-row img{width:96px;height:78px;object-fit:cover;border-radius:6px;background:var(--bg3)}
+.swap-image-meta{min-width:0}
+.swap-image-type{font-size:12px;font-weight:700;margin-bottom:6px}
+.swap-image-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;font-size:11px}
+.swap-image-metrics span{color:var(--text2)}
+.swap-image-metrics strong{font-weight:600}
+.swap-detail-empty{padding:80px 24px;text-align:center;color:var(--text2);font-size:13px}
+.swap-preview-mini{margin-top:12px;padding:10px;border-radius:8px;background:var(--bg3);font-size:12px;line-height:1.7}
+.app-modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(15,23,42,.42);display:flex;align-items:center;justify-content:center;padding:24px}
+.app-modal{width:min(1060px,calc(100vw - 48px));max-height:calc(100vh - 48px);background:#fff;border-radius:14px;box-shadow:0 24px 64px rgba(15,23,42,.28);display:flex;flex-direction:column;overflow:hidden}
+.app-modal.compact{width:min(920px,calc(100vw - 48px))}
+.app-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:16px 18px;border-bottom:1px solid var(--bg3)}
+.app-modal-head h3{margin:0 0 5px;font-size:16px}
+.app-modal-head p{margin:0;color:var(--text2);font-size:12px}
+.app-modal-close{width:32px;height:32px;border:0;border-radius:8px;background:var(--bg3);color:var(--text2);font-size:18px;flex:0 0 auto}
+.app-modal-body{padding:14px 18px 18px;overflow:auto}
+.modal-creative-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.modal-creative-grid .creative-card{margin:0}
+@media(max-width:1250px){
+  .swap-workflow-panel{grid-template-columns:1fr}
+  .swap-workflow-panel .swap-memory{border-right:0;border-bottom:1px solid var(--bg3)}
+}
+@media(max-width:780px){
+  #main{padding:18px 14px}
+  .core-kpi-grid,.business-grid{grid-template-columns:1fr 1fr}
+  .swap-filters{grid-template-columns:1fr 1fr}
+  .swap-calendar-popover{position:fixed;left:12px;right:12px;top:90px;width:auto;grid-template-columns:82px 1fr}
+  .swap-calendar-months{grid-template-columns:1fr;gap:8px}
+  .swap-calendar-month:nth-child(2){display:none}
+  .modal-creative-grid{grid-template-columns:1fr}
+}
 button{cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
-<div id="app">
+<div id="app" @click="swapDateOpen=false">
   <!-- Nav -->
   <nav id="nav">
     <div class="logo">📊 测图看板</div>
@@ -157,7 +320,13 @@ button{cursor:pointer;font-family:inherit}
   <main id="main">
     <!-- Module 0: Overview -->
     <div v-if="current==='overview'">
-      <h2>数据概览</h2>
+      <div class="page-heading">
+        <div>
+          <h2>观看数据概览</h2>
+          <div class="page-subtitle">先看流量规模，再看图片吸引力与点击后的转化效率。</div>
+        </div>
+        <span class="core-badge">核心观看数据</span>
+      </div>
       <div class="filters" style="margin-bottom:8px">
         <label>日期范围</label>
         <input type="date" v-model="overviewDateFrom" style="width:140px;cursor:pointer" @click="e=>e.target.showPicker()">
@@ -170,52 +339,80 @@ button{cursor:pointer;font-family:inherit}
           <option v-for="s in stores" :key="s.name" :value="s.name">{{s.name}} ({{s.creative_count}})</option>
         </select>
       </div>
-      <div class="pills" style="margin-bottom:12px" v-if="summary">
-        <div class="pill" v-for="m in kpiMetrics" :key="m.key"
-             :class="{active:kpiActive[m.key]}" 
-             @click="kpiActive[m.key]=!kpiActive[m.key]">{{m.label}}</div>
-      </div>
-      <div class="kpi-grid" v-if="summary">
-        <div class="kpi-card" v-for="m in activeKpiMetrics" :key="m.key">
+      <div class="core-kpi-grid" v-if="summary">
+        <div class="core-kpi-card" v-for="m in coreKpiMetrics" :key="m.key">
           <div class="label">{{m.label}}</div>
-          <div class="value" :style="m.color?{color:m.color}:{}" :class="{small:m.small}">{{m.format(summary)}}</div>
+          <div class="value" :style="{color:m.color}">{{m.format(summary)}}</div>
+          <div class="hint">{{m.hint}}</div>
         </div>
       </div>
-      <div class="chart-row">
-        <div class="chart-box full"><h3>商品交易额 TOP10</h3><div class="chart-wrap tall"><canvas id="chartTopProducts"></canvas></div></div>
+      <details class="business-details" v-if="summary" style="margin:0 0 16px">
+        <summary>更多经营数据（默认收起）</summary>
+        <div class="business-content">
+          <div class="business-grid">
+            <div class="business-item"><span>总交易额</span><strong>¥{{fmtMoney(summary.total_transaction)}}</strong></div>
+            <div class="business-item"><span>净交易额</span><strong>¥{{fmtMoney(summary.total_net_transaction)}}</strong></div>
+            <div class="business-item"><span>总订单</span><strong>{{fmtInt(summary.total_orders)}}</strong></div>
+            <div class="business-item"><span>商品数</span><strong>{{summary.total_products}}</strong></div>
+            <div class="business-item"><span>创意总数</span><strong>{{summary.total_creatives}}</strong></div>
+            <div class="business-item"><span>店铺数</span><strong>{{summary.total_stores}}</strong></div>
+          </div>
+        </div>
+      </details>
+      <div class="insight-grid" v-if="productAggs.length">
+        <section class="insight-card">
+          <h3>高曝光、低点击率</h3>
+          <p>优先检查图片卖点、主体大小和首屏文字是否足够清晰。</p>
+          <div class="insight-list">
+            <button class="insight-row" v-for="(p,i) in lowCtrWatchlist" :key="p.product_id" @click="openProductImages(p)">
+              <span class="insight-rank">{{i+1}}</span>
+              <span class="insight-product"><strong>{{p.product_code||p.product_id}}</strong><small>{{p.store_name}}</small></span>
+              <span class="insight-metric"><strong>{{fmtPct(p.ctr)}}</strong><small>{{fmtInt(p.total_impressions)}} 曝光</small></span>
+            </button>
+          </div>
+        </section>
+        <section class="insight-card">
+          <h3>高点击率潜力商品</h3>
+          <p>仅统计曝光超过 10,000 的商品，避免低样本误判。</p>
+          <div class="insight-list">
+            <button class="insight-row" v-for="(p,i) in highCtrWatchlist" :key="p.product_id" @click="openProductImages(p)">
+              <span class="insight-rank">{{i+1}}</span>
+              <span class="insight-product"><strong>{{p.product_code||p.product_id}}</strong><small>{{p.store_name}}</small></span>
+              <span class="insight-metric"><strong>{{fmtPct(p.ctr)}}</strong><small>{{fmtInt(p.total_clicks)}} 点击</small></span>
+            </button>
+          </div>
+        </section>
       </div>
       <div class="chart-row">
-        <div class="chart-box full"><h3>店铺分布</h3>
-          <div style="max-height:400px;overflow-y:auto">
-            <table class="data-table">
-              <thead><tr><th>#</th><th>店铺名</th><th>创意数</th><th>占比</th></tr></thead>
-              <tbody>
-                <tr v-for="(s,i) in sortedStores" :key="s.name">
-                  <td style="color:var(--text2)">{{i+1}}</td>
-                  <td>{{s.name}}</td>
-                  <td><span :style="{display:'inline-block',background:'#26a69a',height:'16px',borderRadius:'3px',width:Math.max(4,s.creative_count/maxStoreCount*200)+'px',verticalAlign:'middle',marginRight:'8px'}"></span>{{s.creative_count}}</td>
-                  <td style="color:var(--text2)">{{(s.creative_count/totalStoreCreatives*100).toFixed(1)}}%</td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="chart-box full">
+          <div class="section-heading" style="margin:0 0 12px">
+            <h3>商品曝光 TOP10</h3>
+          <span>点击柱形可在当前页弹窗查看图片</span>
           </div>
+          <div class="chart-wrap tall"><canvas id="chartTopProducts"></canvas></div>
         </div>
       </div>
     </div>
 
     <!-- Module 1: Creative Compare -->
     <div v-if="current==='creative'">
-      <h2>创意对比</h2>
+      <div class="page-heading">
+        <div>
+          <h2>图片分析</h2>
+          <div class="page-subtitle">先比较商品观看表现，再进入单品查看每张图片的曝光、点击与转化。</div>
+        </div>
+        <span class="core-badge">图片 + 商品</span>
+      </div>
       <div class="filters">
         <div class="autocomplete">
-          <input v-model="creativeSearch" placeholder="搜索商品ID或名称..." @input="filterCreativeProducts" @focus="showCreativeDropdown=true">
+          <input v-model="creativeSearch" placeholder="搜索商品ID或名称..." @input="showCreativeDropdown=true" @focus="showCreativeDropdown=true">
           <div class="dropdown" v-if="showCreativeDropdown && filteredCreativeProducts.length">
             <div class="item" v-for="p in filteredCreativeProducts" :key="p.product_id" @click="selectCreativeProduct(p)">
               <span class="id">{{p.product_id}}</span>{{p.product_title||'(无标题)'}}<br><small style="color:var(--text2)">{{p.store_name}}<span v-if="p.product_code"> · {{p.product_code}}</span></small>
             </div>
           </div>
         </div>
-        <button @click="showCreativeDropdown=false;loadCreativeData()" style="background:var(--accent);color:var(--bg);border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:13px">查询</button>
+        <button @click="showCreativeDropdown=false;loadCreativeData()" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:13px">查询图片</button>
       </div>
       <div class="tip" v-if="creativeProduct">当前商品：<strong>{{creativeProduct.product_id}}</strong> · {{creativeProduct.store_name}}<span v-if="creativeProduct.product_code"> · {{creativeProduct.product_code}}</span></div>
       <div class="filters" v-if="creativeData&&creativeDates.length" style="margin-bottom:12px">
@@ -223,85 +420,101 @@ button{cursor:pointer;font-family:inherit}
         <select v-model="creativeDate" @change="loadCreativeData()">
           <option v-for="d in creativeDates" :key="d" :value="d">{{d}}</option>
         </select>
-        <span style="color:var(--text2);font-size:13px">共 {{creativeData.creative_count}} 条创意</span>
+        <span style="color:var(--text2);font-size:13px">显示 {{displayedCreativeRows.length}} / {{creativeData.creative_count}} 张唯一图片</span>
       </div>
       <div v-if="creativeData">
+        <div class="creative-toolbar">
+          <label>图片排序</label>
+          <select v-model="creativeSort">
+            <option value="impressions">曝光量</option>
+            <option value="clicks">点击量</option>
+            <option value="ctr">CTR</option>
+            <option value="conversion_rate">点击转化率</option>
+          </select>
+          <label>最低曝光</label>
+          <select v-model.number="creativeMinImpressions">
+            <option :value="0">不限</option>
+            <option :value="1000">1,000</option>
+            <option :value="5000">5,000</option>
+            <option :value="10000">10,000</option>
+          </select>
+          <span style="font-size:11px;color:var(--text2)">高比例指标建议结合曝光量判断</span>
+        </div>
         <!-- Creative cards -->
         <div class="creative-grid">
-          <div class="creative-card" v-for="c in creativeData.creatives" :key="c.image_url">
+          <div class="creative-card" v-for="(c,i) in displayedCreativeRows" :key="c.image_key||c.image_url">
             <img :src="c.image_url" @error="e=>e.target.style.display='none'" loading="lazy">
             <div class="info">
-              <div class="type">{{c.image_type}} <span :class="'status '+(c.status==='审核通过'?'status-pass':'status-fail')">{{c.status}}</span></div>
+              <div class="type"><span class="creative-rank">{{i+1}}</span>{{c.image_type}} <span :class="'status '+(c.status==='审核通过'?'status-pass':'status-fail')">{{c.status}}</span></div>
               <div class="metrics">
                 <div><span>曝光</span> <strong>{{fmtInt(c.impressions)}}</strong></div>
                 <div><span>点击</span> <strong>{{fmtInt(c.clicks)}}</strong></div>
                 <div><span>CTR</span> <strong>{{fmtPct(c.ctr)}}</strong></div>
-                <div><span>转化率</span> <strong>{{fmtPct(c.conversion_rate)}}</strong></div>
-                <div><span>交易额</span> <strong>¥{{fmtMoney(c.transaction_amount)}}</strong></div>
-                <div><span>订单</span> <strong>{{c.order_count||0}}</strong></div>
+                <div><span>点击转化率</span> <strong>{{fmtPct(c.conversion_rate)}}</strong></div>
               </div>
+              <details class="creative-business">
+                <summary>更多经营数据</summary>
+                <div class="metrics">
+                  <div><span>交易额</span> <strong>¥{{fmtMoney(c.transaction_amount)}}</strong></div>
+                  <div><span>订单</span> <strong>{{c.order_count||0}}</strong></div>
+                </div>
+              </details>
             </div>
           </div>
         </div>
-        <!-- Comparison charts -->
-        <div class="chart-row">
-          <div class="chart-box"><h3>曝光 vs 点击</h3><div class="chart-wrap"><canvas id="chartCreativeImpClicks"></canvas></div></div>
-          <div class="chart-box"><h3>CTR vs 转化率</h3><div class="chart-wrap"><canvas id="chartCreativeCTRCVR"></canvas></div></div>
-        </div>
-        <div class="chart-row">
-          <div class="chart-box full"><h3>交易额对比</h3><div class="chart-wrap short"><canvas id="chartCreativeTrans"></canvas></div></div>
-        </div>
+        <div class="empty" v-if="!displayedCreativeRows.length">当前曝光门槛下没有图片，请降低“最低曝光”。</div>
       </div>
-      <div class="empty" v-else-if="!creativeLoading">请搜索并选择一个商品查看创意对比</div>
+      <div class="empty" v-else-if="!creativeLoading">正在准备默认商品数据，也可以直接搜索商品。</div>
       <div class="loading" v-if="creativeLoading">加载中...</div>
-    </div>
 
-    <!-- Module 2: Product Compare -->
-    <div v-if="current==='product'">
-      <h2>商品对比</h2>
-      <div class="filters">
-        <select v-model="compareMetric">
-          <option value="total_transaction">总交易额</option>
-          <option value="total_orders">总订单数</option>
-          <option value="total_impressions">总曝光</option>
-          <option value="total_clicks">总点击</option>
-          <option value="ctr">CTR</option>
-          <option value="conversion_rate">转化率</option>
-          <option value="creative_count">创意数</option>
-        </select>
-        <label>显示TOP</label>
-        <select v-model="compareTop" @change="loadProductCompare">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="0">全部</option>
-        </select>
-        <input v-model="compareSearch" placeholder="搜索商品ID/标题..." style="width:200px" @input="loadProductCompare">
+      <div class="section-heading">
+        <h3>商品观看表现</h3>
+        <span>当前按 {{metricLabel}} 排序，点击商品可查看图片</span>
       </div>
-      <div class="chart-row">
-        <div class="chart-box full"><h3>商品 {{metricLabel}} 对比</h3><div class="chart-wrap tall"><canvas id="chartProductCompare"></canvas></div></div>
+      <div class="analysis-toolbar">
+        <div class="metric-toggle">
+          <button :class="{active:compareMetric==='total_impressions'}" @click="compareMetric='total_impressions'">曝光</button>
+          <button :class="{active:compareMetric==='total_clicks'}" @click="compareMetric='total_clicks'">点击</button>
+          <button :class="{active:compareMetric==='ctr'}" @click="compareMetric='ctr'">CTR</button>
+          <button :class="{active:compareMetric==='conversion_rate'}" @click="compareMetric='conversion_rate'">点击转化率</button>
+        </div>
+        <div class="filters" style="margin:0">
+          <label>显示 TOP</label>
+          <select v-model="compareTop">
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="0">全部</option>
+          </select>
+          <input v-model="compareSearch" placeholder="搜索商品ID/标题..." style="width:200px">
+        </div>
       </div>
-      <table class="data-table" v-if="productAggs.length">
-        <thead><tr><th>商品ID</th><th>编码</th><th>标题</th><th>店铺</th><th>交易额</th><th>订单</th><th>曝光</th><th>点击</th><th>CTR</th><th>转化率</th></tr></thead>
-        <tbody>
-          <tr v-for="p in displayProductAggs" :key="p.product_id" @click="selectCompareProduct(p)" style="cursor:pointer">
-            <td style="color:var(--accent)">{{p.product_id}}</td>
-            <td>{{p.product_code||'-'}}</td>
-            <td>{{p.product_title||'-'}}</td>
-            <td>{{p.store_name}}</td>
-            <td>¥{{fmtMoney(p.total_transaction)}}</td>
-            <td>{{p.total_orders}}</td>
-            <td>{{fmtInt(p.total_impressions)}}</td>
-            <td>{{fmtInt(p.total_clicks)}}</td>
-            <td>{{fmtPct(p.ctr)}}</td>
-            <td>{{fmtPct(p.conversion_rate)}}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-card">
+        <table class="data-table" v-if="productAggs.length">
+          <thead><tr><th>商品ID</th><th>编码</th><th>店铺</th><th>曝光</th><th>点击</th><th>CTR</th><th>点击转化率</th></tr></thead>
+          <tbody>
+            <tr v-for="p in displayProductAggs" :key="p.product_id" @click="openProductImages(p)" style="cursor:pointer">
+              <td style="color:var(--accent);font-weight:600">{{p.product_id}}</td>
+              <td>{{p.product_code||'-'}}</td>
+              <td>{{p.store_name}}</td>
+              <td>{{fmtInt(p.total_impressions)}}</td>
+              <td>{{fmtInt(p.total_clicks)}}</td>
+              <td>{{fmtPct(p.ctr)}}</td>
+              <td>{{fmtPct(p.conversion_rate)}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Module 3: Trends -->
     <div v-if="current==='trend'">
-      <h2>趋势分析</h2>
+      <div class="page-heading">
+        <div>
+          <h2>观看趋势</h2>
+          <div class="page-subtitle">观察曝光、点击和效率指标随时间的变化，默认展示全部商品曝光趋势。</div>
+        </div>
+        <span class="core-badge">按天查看</span>
+      </div>
       <div class="filters">
         <div class="autocomplete">
           <input v-model="trendSearch" placeholder="搜索商品（留空=全部）..." @focus="showTrendDropdown=true" @input="showTrendDropdown=true">
@@ -313,18 +526,23 @@ button{cursor:pointer;font-family:inherit}
         </div>
         <button @click="showTrendDropdown=false;loadTrends()" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:13px">查询</button>
         <select v-model="trendMetric" @change="loadTrends()">
-          <option value="transaction_amount">交易额</option>
-          <option value="order_count">成交笔数</option>
           <option value="impressions">曝光量</option>
           <option value="clicks">点击量</option>
+          <option value="ctr">CTR</option>
+          <option value="conversion_rate">点击转化率</option>
         </select>
         <div class="pills">
           <div class="pill" :class="{active:trendMode==='single'}" @click="trendMode='single';loadTrends()">单品</div>
           <div class="pill" :class="{active:trendMode==='multi'}" @click="trendMode='multi';loadTrends()">多品叠加</div>
         </div>
-        <input type="date" v-model="trendDateFrom" style="width:140px;cursor:pointer" title="开始日期" @click="e=>e.target.showPicker()" @change="loadTrends()">
+        <input type="date" v-model="trendDateFrom" style="width:140px;cursor:pointer" title="开始日期" @click="e=>e.target.showPicker()" @change="trendQuickRange='';loadTrends()">
         <span style="color:var(--text2)">至</span>
-        <input type="date" v-model="trendDateTo" style="width:140px;cursor:pointer" title="结束日期" @click="e=>e.target.showPicker()" @change="loadTrends()">
+        <input type="date" v-model="trendDateTo" style="width:140px;cursor:pointer" title="结束日期" @click="e=>e.target.showPicker()" @change="trendQuickRange='';loadTrends()">
+      </div>
+      <div class="metric-toggle" style="width:max-content;margin-bottom:12px">
+        <button :class="{active:trendQuickRange==='7'}" @click="applyTrendQuickRange(7)">近 7 天</button>
+        <button :class="{active:trendQuickRange==='30'}" @click="applyTrendQuickRange(30)">近 30 天</button>
+        <button :class="{active:trendQuickRange==='all'}" @click="applyTrendQuickRange(0)">全部日期</button>
       </div>
       <!-- Multi-product picker -->
       <div class="pills" v-if="trendMode==='multi'" style="margin-bottom:12px">
@@ -334,198 +552,341 @@ button{cursor:pointer;font-family:inherit}
         <button @click="loadTrends()" style="background:var(--accent);color:var(--bg);border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;margin-left:8px">更新</button>
       </div>
       <div class="chart-row">
-        <div class="chart-box full"><h3>{{trendMetricLabel}} 趋势</h3><div class="chart-wrap tall"><canvas id="chartTrends"></canvas></div></div>
-      </div>
-      <!-- 单品模式下展示该商品的创意图链接 -->
-      <div v-if="trendMode==='single' && trendProduct && trendCreativeData" style="margin-top:16px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-          <h3 style="font-size:14px;color:var(--accent2);margin:0">🔗 商品 {{trendProduct.product_id}} 的链接图片</h3>
-          <select v-if="trendCreativeDates.length" v-model="trendCreativeDate" @change="loadTrendCreatives()" style="background:var(--bg2);color:var(--text);border:1px solid var(--bg4);border-radius:var(--radius-md);padding:5px 10px;font-size:12px">
-            <option v-for="d in trendCreativeDates" :key="d" :value="d">{{d}}</option>
-          </select>
-          <span style="color:var(--text2);font-size:12px" v-if="trendCreativeData">共 {{trendCreativeData.creative_count}} 张</span>
-        </div>
-        <div class="creative-grid">
-          <div class="creative-card" v-for="c in trendCreativeData.creatives" :key="c.image_url">
-            <img :src="c.image_url" @error="e=>e.target.style.display='none'" loading="lazy">
-            <div class="info">
-              <div class="type">{{c.image_type}} <span :class="'status '+(c.status==='审核通过'?'status-pass':'status-fail')">{{c.status}}</span></div>
-              <div class="metrics">
-                <div><span>曝光</span> <strong>{{fmtInt(c.impressions)}}</strong></div>
-                <div><span>点击</span> <strong>{{fmtInt(c.clicks)}}</strong></div>
-                <div><span>CTR</span> <strong>{{fmtPct(c.ctr)}}</strong></div>
-                <div><span>交易额</span> <strong>¥{{fmtMoney(c.transaction_amount)}}</strong></div>
-                <div><span>订单</span> <strong>{{c.order_count||0}}</strong></div>
-              </div>
-            </div>
+        <div class="chart-box full">
+          <div class="section-heading" style="margin:0 0 12px">
+            <h3>{{trendMetricLabel}} 趋势</h3>
+            <button v-if="trendProduct" class="secondary-action" @click="openProductImages(trendProduct)">查看该商品图片</button>
           </div>
+          <div class="chart-wrap tall"><canvas id="chartTrends"></canvas></div>
         </div>
       </div>
-    </div>
-
-    <!-- Module 4: ROI -->
-    <div v-if="current==='roi'">
-      <h2>投产比分析</h2>
-      <div class="filters">
-        <select v-model="roiStore" @change="loadROI">
-          <option value="">全部店铺</option>
-          <option v-for="s in stores" :key="s.name" :value="s.name">{{s.name}}</option>
-        </select>
-        <div class="autocomplete">
-          <input v-model="roiSearch" placeholder="搜索商品ID..." @focus="showRoiDropdown=true">
-          <div class="dropdown" v-if="showRoiDropdown && filteredRoiProducts.length">
-            <div class="item" v-for="p in filteredRoiProducts" :key="p.product_id" @click="selectRoiProduct(p)">
-              <span class="id">{{p.product_id}}</span>{{p.product_title||'(全部)'}}
-            </div>
-          </div>
-        </div>
-        <input type="date" v-model="roiDateFrom" style="width:140px;cursor:pointer" title="开始日期" @click="e=>e.target.showPicker()">
-        <span style="color:var(--text2)">至</span>
-        <input type="date" v-model="roiDateTo" style="width:140px;cursor:pointer" title="结束日期" @click="e=>e.target.showPicker()">
-        <button @click="showRoiDropdown=false;loadROI()" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:13px">查询</button>
-      </div>
-      <div class="chart-row">
-        <div class="chart-box full"><h3>花费 vs 交易额</h3><div class="chart-wrap tall"><canvas id="chartROIBar"></canvas></div></div>
-      </div>
-      <div class="chart-row">
-        <div class="chart-box"><h3>CTR & 转化率 趋势</h3><div class="chart-wrap"><canvas id="chartROILine"></canvas></div></div>
-        <div class="chart-box"><h3>退款率趋势</h3><div class="chart-wrap"><canvas id="chartRefund"></canvas></div></div>
-      </div>
-      <table class="data-table" v-if="roiData && roiData.roi_data && roiData.roi_data.length">
-        <thead><tr><th>日期</th><th>花费</th><th>交易额</th><th>ROI</th><th>订单</th><th>点击</th><th>曝光</th></tr></thead>
-        <tbody>
-          <tr v-for="d in roiData.roi_data" :key="d.date">
-            <td>{{d.date}}</td><td>¥{{fmtMoney(d.spend)}}</td><td>¥{{fmtMoney(d.transaction)}}</td>
-            <td :style="{color:d.roi>1?'var(--green)':'var(--red)'}">{{d.roi}}</td>
-            <td>{{d.orders}}</td><td>{{fmtInt(d.clicks)}}</td><td>{{fmtInt(d.impressions)}}</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
 
     <!-- Module 5: Swap Image -->
     <div v-if="current==='swap'">
-      <h2>换图</h2>
-      <div class="tip">选源商品的一张有数据图 → 替换到多个目标商品的无数据空图位</div>
-      <div class="filters">
-        <div style="flex:1;min-width:200px">
-          <label style="display:block;margin-bottom:4px">📌 源商品</label>
-          <div class="autocomplete">
-            <input v-model="swapSourceSearch" placeholder="搜索源商品ID..." @focus="swapShowSource=true" @input="swapShowSource=true">
-            <div class="dropdown" v-if="swapShowSource && filteredSwapProducts.length">
-              <div class="item" v-for="p in filteredSwapProducts" :key="p.product_id" @click="selectSwapSource(p)">
-                <span class="id">{{p.product_id}}</span>{{p.product_title||'(无标题)'}}<br><small style="color:var(--text2)">{{p.store_name}}</small>
+      <div class="swap-heading">
+        <div>
+          <h2>换图工作台</h2>
+          <div class="tip" style="margin:0">筛选源商品 → 查看全部图片 → 勾选并记忆 → 选择目标商品执行换图</div>
+        </div>
+        <div class="swap-count">已记忆 {{swapSelectedMemory.length}} 张图片</div>
+      </div>
+
+      <section class="swap-panel swap-shared-filter">
+        <div class="swap-panel-head">
+          <div class="swap-panel-title">
+            <h3>源商品与目标商品共用筛选</h3>
+            <span class="swap-count">显示 {{filteredSwapProductRows.length}} / {{swapProducts.length}}</span>
+          </div>
+          <div class="swap-filters">
+            <input v-model="swapProductIdFilter" placeholder="商品ID / 标题">
+            <select v-model="swapStoreFilter">
+              <option value="">全部店铺</option>
+              <option v-for="store in swapStoreOptions" :key="store" :value="store">{{store}}</option>
+            </select>
+            <select v-model="swapBrandFilter">
+              <option value="">全部品牌</option>
+              <option v-for="brand in swapBrandOptions" :key="brand" :value="brand">{{brand}}</option>
+            </select>
+            <input v-model="swapCodeFilter" placeholder="商品编码">
+            <div class="swap-date-picker" @click.stop>
+              <button class="swap-date-trigger" :class="{active:swapDateOpen}" @click="swapDateOpen=!swapDateOpen">
+                <span>{{swapDateRangeLabel}}</span><span aria-hidden="true">⌄</span>
+              </button>
+              <div v-if="swapDateOpen" class="swap-calendar-popover">
+                <div class="swap-date-shortcuts">
+                  <button v-for="preset in swapDatePresets" :key="preset.key"
+                          :class="{active:swapDatePreset===preset.key}"
+                          @click="setSwapQuickRange(preset.key)">{{preset.label}}</button>
+                </div>
+                <div class="swap-calendar-main">
+                  <div class="swap-calendar-nav">
+                    <button aria-label="上个月" @click="moveSwapCalendar(-1)">‹</button>
+                    <strong>{{swapCalendarMonths[0].label}}</strong>
+                    <strong>{{swapCalendarMonths[1].label}}</strong>
+                    <button aria-label="下个月" @click="moveSwapCalendar(1)">›</button>
+                  </div>
+                  <div class="swap-calendar-months">
+                    <div class="swap-calendar-month" v-for="month in swapCalendarMonths" :key="month.key">
+                      <div class="swap-calendar-week"><span v-for="w in swapWeekdays" :key="w">{{w}}</span></div>
+                      <div class="swap-calendar-days">
+                        <button v-for="day in month.days" :key="day.date"
+                                class="swap-calendar-day"
+                                :data-date="day.date"
+                                :class="{outside:!day.current,'in-range':isSwapDateInRange(day.date),edge:isSwapDateEdge(day.date)}"
+                                :disabled="!day.current"
+                                @click="chooseSwapCalendarDay(day.date)">{{day.day}}</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="swap-calendar-footer">
+                    <span>已选： <strong>{{swapDateSelectionLabel}}</strong></span>
+                    <button class="swap-date-clear" @click="clearSwapDateRange">清空</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <span style="font-size:24px;align-self:flex-end;padding:0 8px">→</span>
-        <div style="flex:1;min-width:200px">
-          <label style="display:block;margin-bottom:4px">🎯 目标商品（可多选）</label>
-          <div class="autocomplete">
-            <input v-model="swapTargetSearch" placeholder="搜索目标商品ID..." @focus="swapShowTarget=true" @input="swapShowTarget=true">
-            <div class="dropdown" v-if="swapShowTarget && filteredSwapTargets.length">
-              <div class="item" v-for="p in filteredSwapTargets" :key="p.product_id" @click="selectSwapTarget(p)">
-                <span class="id">{{p.product_id}}</span>{{p.product_title||'(无标题)'}}<br><small style="color:var(--text2)">{{p.store_name}}</small>
+      </section>
+
+      <div class="swap-product-grid">
+        <!-- Source products -->
+        <section class="swap-panel">
+          <div class="swap-panel-head">
+            <div class="swap-panel-title">
+              <h3>源商品信息</h3>
+              <span class="swap-count">显示 {{filteredSwapProductRows.length}} / {{swapProducts.length}}</span>
+            </div>
+          </div>
+
+          <div class="swap-table-wrap swap-compact-table-wrap">
+            <table class="data-table swap-table swap-compact-table">
+              <thead>
+                <tr>
+                  <th>操作</th><th>商品ID</th><th>店铺</th><th>品牌</th><th>编码</th><th>日期</th>
+                  <th>主图</th><th>曝光量</th><th>点击量</th><th>点击率</th><th>点击转化率</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="p in filteredSwapProductRows" :key="p.product_id"
+                    :class="{active:swapSource&&swapSource.product_id===p.product_id}"
+                    @click="selectSwapSource(p)">
+                  <td><button class="swap-link">选择图片</button></td>
+                  <td style="color:var(--accent);font-weight:600">{{p.product_id}}</td>
+                  <td>{{p.store_name||'-'}}</td>
+                  <td>{{p.brand||'-'}}</td>
+                  <td>{{p.product_code||'-'}}</td>
+                  <td>{{p.date||'-'}}</td>
+                  <td><img class="source-thumb" :src="p.image_url" @error="e=>e.target.style.visibility='hidden'" loading="lazy"></td>
+                  <td>{{fmtInt(p.impressions)}}</td>
+                  <td>{{fmtInt(p.clicks)}}</td>
+                  <td>{{fmtPct(p.ctr)}}</td>
+                  <td>{{fmtPct(p.conversion_rate)}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Target products -->
+        <section class="swap-panel">
+          <div class="swap-panel-head">
+            <div class="swap-panel-title">
+              <h3>目标商品信息</h3>
+              <span class="swap-count">显示 {{filteredSwapTargetRows.length}} · 已选 {{swapTargets.length}} 个</span>
+            </div>
+          </div>
+          <div class="swap-table-wrap swap-compact-table-wrap">
+            <table class="data-table swap-table swap-compact-table">
+              <thead>
+                <tr>
+                  <th>选择</th><th>商品ID</th><th>店铺</th><th>品牌</th><th>编码</th><th>日期</th>
+                  <th>主图</th><th>曝光量</th><th>点击量</th><th>点击率</th><th>点击转化率</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="p in filteredSwapTargetRows" :key="p.product_id"
+                    :class="{active:swapTargets.some(t=>t.product_id===p.product_id)}"
+                    @click="openSwapTargetImages(p)">
+                  <td><button class="swap-link">{{swapTargetSelectionCount(p.product_id)?'已选 '+swapTargetSelectionCount(p.product_id)+' 张':'选择换出图片'}}</button></td>
+                  <td style="color:var(--accent);font-weight:600">{{p.product_id}}</td>
+                  <td>{{p.store_name||'-'}}</td>
+                  <td>{{p.brand||'-'}}</td>
+                  <td>{{p.product_code||'-'}}</td>
+                  <td>{{p.date||'-'}}</td>
+                  <td><img class="source-thumb" :src="p.image_url" @error="e=>e.target.style.visibility='hidden'" loading="lazy"></td>
+                  <td>{{fmtInt(p.impressions)}}</td>
+                  <td>{{fmtInt(p.clicks)}}</td>
+                  <td>{{fmtPct(p.ctr)}}</td>
+                  <td>{{fmtPct(p.conversion_rate)}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section class="swap-panel swap-workflow-panel">
+        <div class="swap-memory">
+          <div class="swap-memory-head">
+            <h3>已选图片记忆</h3>
+            <button v-if="swapSelectedMemory.length" class="swap-link" @click="clearSwapMemory">清空全部</button>
+          </div>
+          <div class="swap-memory-list">
+            <div v-if="!swapSelectedMemory.length" class="swap-memory-empty">在源商品弹窗中勾选的图片会保存在这里，刷新页面也不会丢失</div>
+            <div class="swap-memory-card" v-for="item in swapSelectedMemory" :key="item.source_product_id+'|'+item.image_url">
+              <button class="swap-memory-remove" @click="removeSwapMemoryItem(item)">✕</button>
+              <img :src="item.image_url" @error="e=>e.target.style.visibility='hidden'">
+              <small :title="item.source_product_id">{{item.source_product_id}}</small>
+            </div>
+          </div>
+        </div>
+        <div class="swap-actions">
+          <div class="swap-panel-title" style="margin-bottom:10px">
+            <h3>换图方案与执行</h3>
+            <span class="swap-count">{{swapSelectedImages.length}} 张源图 → {{swapTargetSelectedCount}} 张目标图</span>
+          </div>
+          <div class="swap-targets">
+            <span class="pill active" v-for="t in swapTargets" :key="t.product_id">
+              {{t.product_id}} · {{swapTargetSelectionCount(t.product_id)}} 张 <span style="margin-left:5px" @click="removeSwapTarget(t)">✕</span>
+            </span>
+            <span v-if="!swapTargets.length" class="tip">请点击上方目标商品，勾选需要被替换的图片</span>
+          </div>
+          <div class="swap-target-image-summary" v-if="swapTargets.length">
+            <div class="swap-target-image-group" v-for="t in swapTargets" :key="t.product_id">
+              <strong :title="t.product_id">{{t.product_id}}</strong>
+              <div class="swap-target-thumb-list">
+                <img v-for="url in swapTargetSelections[t.product_id]" :key="url" :src="url" @error="e=>e.target.style.visibility='hidden'">
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      <!-- Selected -->
-      <div v-if="swapSource" style="margin-bottom:12px">
-        <div class="pill active" style="cursor:default">源: {{swapSource.product_id}} <span style="cursor:pointer;margin-left:6px" @click="swapSource=null;swapSelectedImages=[]">✕</span></div>
-        <div class="pill active" v-for="t in swapTargets" :key="t.product_id" style="cursor:default">
-          目标: {{t.product_id}} <span style="cursor:pointer;margin-left:6px" @click="removeSwapTarget(t)">✕</span>
-        </div>
-      </div>
-      <!-- Source image selection -->
-      <div v-if="swapSource && swapSourceImages.length" style="margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-          <h3 style="font-size:14px;color:var(--text2)">选择源轮播图（共{{swapSourceImages.length}}张）</h3>
-          <span v-if="swapSelectedImages.length" style="font-size:13px;font-weight:bold;color:var(--accent)">已选 {{swapSelectedImages.length}} 张</span>
-          <span v-if="swapSelectedImages.length>1" @click="swapSelectedImages=[]" style="font-size:12px;color:var(--text2);cursor:pointer;text-decoration:underline">清空</span>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <div v-for="(img,i) in swapSourceImages" :key="i" @click="toggleSwapImage(img.image_url)"
-            :style="{border:'2px solid '+(swapSelectedImages.includes(img.image_url)?'var(--accent)':'var(--bg3)'),borderRadius:'8px',padding:'8px',cursor:'pointer',background:swapSelectedImages.includes(img.image_url)?'rgba(25,118,210,.1)':'var(--bg2)',textAlign:'center',width:'140px',position:'relative'}">
-            <div v-if="swapSelectedImages.includes(img.image_url)" style="position:absolute;top:4px;right:4px;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;text-align:center">✓</div>
-            <img :src="img.image_url" style="width:100px;height:100px;object-fit:cover;border-radius:4px;margin-bottom:4px" @error="e=>e.target.style.display='none'">
-            <div :style="{fontSize:'11px',fontWeight:'bold',padding:'1px 6px',borderRadius:'3px',display:'inline-block',marginBottom:'2px',background:swapImageTypeColor(img.image_type),color:'#fff'}">{{img.image_type}}</div>
-            <div style="font-size:12px;font-weight:bold">¥{{fmtMoney(img.net_transaction)}}</div>
-            <div style="font-size:10px;color:var(--text2)">{{fmtInt(img.impressions)}}曝光</div>
+          <div class="swap-action-row">
+            <button class="swap-btn secondary" @click="previewSwap"
+                    :disabled="!swapSource||!swapTargets.length||!swapSelectedImages.length">预览方案</button>
+            <button class="swap-btn primary" @click="executeSwap"
+                    :disabled="swapExecuting||!swapSource||!swapTargets.length||!swapSelectedImages.length||swapOverLimit||!swapPreview||!swapTargetBackendReady||!swapServerQueueReady">
+              {{swapExecuting?'执行中...':!swapPreview?'请先预览方案':!swapTargetBackendReady||!swapServerQueueReady?'请重启服务后执行':'提交换图任务'}}
+            </button>
+            <button v-if="swapExecuting" class="swap-btn danger" @click="stopSwap">停止</button>
           </div>
-        </div>
-      </div>
-      <!-- Action buttons -->
-      <div v-if="swapSource && swapTargets.length && swapSelectedImages.length" style="margin-bottom:12px">
-        <div class="filters" style="margin-bottom:8px">
-          <button @click="previewSwap" style="background:var(--accent2);color:#fff;border:none;border-radius:4px;padding:8px 20px;cursor:pointer;font-size:14px">🔍 预览</button>
-          <button @click="executeSwap" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:8px 20px;cursor:pointer;font-size:14px" :disabled="swapExecuting">{{swapExecuting?'执行中...':'⚡ 替换所有空图位'}}</button>
-          <button v-if="swapExecuting" @click="stopSwap" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:8px 20px;cursor:pointer;font-size:14px">⏹ 停止</button>
-        </div>
-        <div v-if="swapPreview && swapOverLimit" style="color:var(--red);font-size:13px;font-weight:bold">
-          ⚠ 源轮播图{{swapSelectedImages.length}}张 > 目标最少可替换位{{swapMinEmpty}}个，超出{{swapSelectedImages.length - swapMinEmpty}}张
-        </div>
-      </div>
-      <!-- Preview result -->
-      <div v-if="swapPreview" style="margin-top:16px">
-        <h3 style="font-size:15px;color:var(--accent2);margin-bottom:12px">换图方案 — 源轮播图{{swapSelectedImages.length}}张 → {{swapPreview.targets.length}}个目标</h3>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
-          <div style="background:var(--bg2);border:2px solid var(--accent);border-radius:var(--radius);padding:16px;min-width:200px">
-            <h4 style="color:var(--accent);margin-bottom:8px">📌 源轮播图（{{swapSelectedImages.length}}张）</h4>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <img v-for="(url,i) in swapSelectedImages" :key="i" :src="url" style="width:80px;height:80px;object-fit:cover;border-radius:4px" @error="e=>e.target.style.display='none'">
+          <div v-if="swapPreview" class="swap-preview-mini">
+            <strong>换图方案：</strong>{{swapSelectedImages.length}} 张当前源图 → {{swapPreview.targets.length}} 个目标商品
+            <div v-for="t in swapPreview.targets" :key="t.product_id">
+              {{t.product_id}}：已选择 {{t.selected_count||swapTargetSelectionCount(t.product_id)}} 张待替换图片
+            </div>
+            <div v-if="!swapTargetBackendReady" style="color:var(--red);font-weight:700">
+              当前后台尚未加载“指定目标图”功能，请重启 Docker 容器后再执行。
+            </div>
+            <div v-if="swapTargetBackendReady&&!swapServerQueueReady" style="color:var(--red);font-weight:700">
+              当前后台尚未加载“服务器任务队列”功能，请重新创建 Docker 容器后再执行。
+            </div>
+            <div v-if="swapOverLimit" style="color:var(--red);font-weight:700">
+              部分目标选择的待替换图片多于源图数量，请补充源图或减少目标图。
             </div>
           </div>
-          <span style="font-size:24px;align-self:center">→ 替换 →</span>
-          <div v-for="t in swapPreview.targets" :key="t.product_id" style="background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--radius);padding:16px;flex:1;min-width:280px;position:relative">
-            <span @click="removeSwapTargetById(t.product_id)" style="position:absolute;top:8px;right:10px;cursor:pointer;color:var(--red);font-size:16px;font-weight:bold" title="移除此目标">✕</span>
-            <h4 style="color:var(--orange);margin-bottom:8px">🎯 {{t.product_id}}</h4>
-            <div style="margin-bottom:8px">
-              <b style="color:var(--accent)">{{t.has_data_count}}张轮播图保留（占位）</b> |
-              <span :style="{color:t.empty_slots>=swapSelectedImages.length?'var(--green)':'var(--red)'}">剩余可替换约{{Math.max(0, t.empty_slots - swapSelectedImages.length)}}位</span>
-              <span v-if="t.empty_slots<swapSelectedImages.length" style="color:var(--red);font-weight:bold"> ⚠超出{{swapSelectedImages.length - t.empty_slots}}张</span>
+          <div v-if="swapStatus" :style="{marginTop:'12px',padding:'10px',borderRadius:'8px',background:swapStatus.success?'rgba(56,142,60,.1)':'rgba(211,47,47,.1)',color:swapStatus.success?'var(--green)':'var(--red)',fontSize:'12px'}">
+            {{swapStatus.success?'✅ '+swapStatus.message:'❌ '+swapStatus.message}}
+          </div>
+        </div>
+      </section>
+
+      <!-- Source image picker modal -->
+      <div v-if="swapImageModalOpen" class="app-modal-backdrop" @click.self="swapImageModalOpen=false">
+        <section class="app-modal compact">
+          <div class="app-modal-head">
+            <div>
+              <h3>选择源商品图片 <span class="swap-count">{{swapSourceImages.length}} 张唯一图片</span></h3>
+              <p v-if="swapSource">{{swapSource.product_id}} · {{swapSource.store_name||'-'}} · {{swapSource.product_code||'无编码'}} · 图片日期 {{swapDateSummaryLabel}}</p>
             </div>
-            <div v-if="t.main_images.length" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-              <div v-for="(img,i) in t.main_images" :key="'m'+i" style="text-align:center;opacity:.8">
-                <img :src="img.image_url" style="width:50px;height:50px;object-fit:cover;border-radius:3px;border:1px solid var(--green)" @error="e=>e.target.style.display='none'">
-                <div style="font-size:9px;color:var(--green)">{{img.image_type}}</div>
+            <button class="app-modal-close" aria-label="关闭图片窗口" @click="swapImageModalOpen=false">×</button>
+          </div>
+          <div v-if="swapSourceLoading" class="loading">正在加载商品图片...</div>
+          <div v-else-if="!swapSourceImages.length" class="swap-detail-empty">该商品暂无可用图片数据。</div>
+          <div v-else class="swap-image-list app-modal-body">
+            <label class="swap-image-row" v-for="img in swapSourceImages"
+                   :key="img.image_url"
+                   :class="{selected:swapSelectedImages.includes(img.image_url)}">
+              <input type="checkbox" :checked="swapSelectedImages.includes(img.image_url)" @change="toggleSwapImage(img)">
+              <img :src="img.image_url" @error="e=>e.target.style.visibility='hidden'" loading="lazy">
+              <div class="swap-image-meta">
+                <div class="swap-image-type" :style="{color:swapImageTypeColor(img.image_type)}">
+                  {{img.image_type||'未分类'}}<template v-if="swapDateFrom"> · {{swapDateSummaryLabel}}</template>
+                </div>
+                <div class="swap-image-metrics">
+                  <div><span>曝光</span> <strong>{{fmtInt(img.impressions)}}</strong></div>
+                  <div><span>点击</span> <strong>{{fmtInt(img.clicks)}}</strong></div>
+                  <div><span>点击率</span> <strong>{{fmtPct(img.ctr)}}</strong></div>
+                  <div><span>点击转化率</span> <strong>{{fmtPct(img.conversion_rate)}}</strong></div>
+                </div>
+                <details class="creative-business">
+                  <summary>更多经营数据</summary>
+                  <div class="swap-image-metrics" style="margin-top:7px">
+                    <div><span>交易额</span> <strong>¥{{fmtMoney(img.transaction_amount)}}</strong></div>
+                    <div><span>订单</span> <strong>{{fmtInt(img.order_count)}}</strong></div>
+                  </div>
+                </details>
               </div>
-            </div>
-            <div v-if="!t.main_images.length" style="color:var(--text2);font-size:12px">该商品无轮播图数据</div>
+            </label>
           </div>
-        </div>
+        </section>
       </div>
-      <!-- Status messages -->
-      <div v-if="swapStatus" :style="{marginTop:'16px',padding:'12px',borderRadius:'8px',background:swapStatus.success?'rgba(56,142,60,.1)':'rgba(211,47,47,.1)',color:swapStatus.success?'var(--green)':'var(--red)'}">
-        {{swapStatus.success?'✅ '+swapStatus.message:'❌ '+swapStatus.message}}
+
+      <!-- Target image picker modal -->
+      <div v-if="swapTargetImageModalOpen" class="app-modal-backdrop" @click.self="swapTargetImageModalOpen=false">
+        <section class="app-modal compact">
+          <div class="app-modal-head">
+            <div>
+              <h3>选择需要被替换的目标图片 <span class="swap-count">{{swapTargetImages.length}} 张唯一图片</span></h3>
+              <p v-if="swapTargetImageProduct">{{swapTargetImageProduct.product_id}} · {{swapTargetImageProduct.store_name||'-'}} · {{swapTargetImageProduct.product_code||'无编码'}} · 已选 {{swapTargetSelectionCount(swapTargetImageProduct.product_id)}} 张</p>
+            </div>
+            <button class="app-modal-close" aria-label="关闭目标图片窗口" @click="swapTargetImageModalOpen=false">×</button>
+          </div>
+          <div v-if="swapTargetImagesLoading" class="loading">正在加载目标商品图片...</div>
+          <div v-else-if="!swapTargetImages.length" class="swap-detail-empty">该目标商品暂无可替换图片。</div>
+          <div v-else class="swap-image-list app-modal-body">
+            <label class="swap-image-row" v-for="img in swapTargetImages"
+                   :key="img.image_url"
+                   :class="{selected:swapTargetImageSelected(img.image_url)}">
+              <input type="checkbox" :checked="swapTargetImageSelected(img.image_url)" @change="toggleSwapTargetImage(img)">
+              <img :src="img.image_url" @error="e=>e.target.style.visibility='hidden'" loading="lazy">
+              <div class="swap-image-meta">
+                <div class="swap-image-type" :style="{color:swapImageTypeColor(img.image_type)}">
+                  {{img.image_type||'未分类'}}<template v-if="swapDateFrom"> · {{swapDateSummaryLabel}}</template>
+                </div>
+                <div class="swap-image-metrics">
+                  <div><span>曝光</span> <strong>{{fmtInt(img.impressions)}}</strong></div>
+                  <div><span>点击</span> <strong>{{fmtInt(img.clicks)}}</strong></div>
+                  <div><span>点击率</span> <strong>{{fmtPct(img.ctr)}}</strong></div>
+                  <div><span>点击转化率</span> <strong>{{fmtPct(img.conversion_rate)}}</strong></div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </section>
       </div>
     </div>
 
-    <!-- Product detail modal -->
-    <div v-if="compareDetail" @click.self="compareDetail=null" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center">
-      <div style="background:var(--bg2);border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="color:var(--accent);margin:0">📦 商品详情</h3>
-          <span @click="compareDetail=null" style="cursor:pointer;font-size:20px;color:var(--text2)">✕</span>
+    <!-- Quick creative viewer: keeps the current dashboard context -->
+    <div v-if="quickCreativeOpen" class="app-modal-backdrop" @click.self="quickCreativeOpen=false">
+      <section class="app-modal">
+        <div class="app-modal-head">
+          <div>
+            <h3>商品图片信息 <span v-if="creativeData" class="swap-count">{{creativeData.creative_count}} 张唯一图片</span></h3>
+            <p v-if="creativeProduct">{{creativeProduct.product_id}} · {{creativeProduct.store_name||'-'}} · {{creativeProduct.product_code||'无编码'}}</p>
+          </div>
+          <button class="app-modal-close" aria-label="关闭商品图片窗口" @click="quickCreativeOpen=false">×</button>
         </div>
-        <div style="font-size:13px;line-height:2">
-          <div><b style="color:var(--text2)">商品ID：</b><span style="color:var(--accent)">{{compareDetail.product_id}}</span></div>
-          <div><b style="color:var(--text2)">标题：</b>{{compareDetail.product_title||'-'}}</div>
-          <div><b style="color:var(--text2)">店铺：</b>{{compareDetail.store_name}}</div>
-          <hr style="border-color:var(--bg3);margin:10px 0">
-          <div><b style="color:var(--text2)">总交易额：</b>¥{{fmtMoney(compareDetail.total_transaction)}}</div>
-          <div><b style="color:var(--text2)">总订单数：</b>{{compareDetail.total_orders}}</div>
-          <div><b style="color:var(--text2)">总曝光：</b>{{fmtInt(compareDetail.total_impressions)}}</div>
-          <div><b style="color:var(--text2)">总点击：</b>{{fmtInt(compareDetail.total_clicks)}}</div>
-          <div><b style="color:var(--text2)">CTR：</b>{{fmtPct(compareDetail.ctr)}}</div>
-          <div><b style="color:var(--text2)">转化率：</b>{{fmtPct(compareDetail.conversion_rate)}}</div>
-          <div><b style="color:var(--text2)">ROI：</b>{{compareDetail.roi}}</div>
-          <div><b style="color:var(--text2)">总花费：</b>¥{{fmtMoney(compareDetail.total_spend)}}</div>
-          <div v-if="compareDetail.total_transaction>0&&compareDetail.total_spend>0"><b style="color:var(--text2)">投产比：</b>{{(compareDetail.total_transaction/compareDetail.total_spend).toFixed(2)}}</div>
+        <div class="app-modal-body">
+          <div class="creative-toolbar" v-if="creativeDates.length">
+            <label>图片日期</label>
+            <select v-model="creativeDate" @change="loadCreativeData()">
+              <option v-for="d in creativeDates" :key="d" :value="d">{{d}}</option>
+            </select>
+            <label>排序</label>
+            <select v-model="creativeSort">
+              <option value="impressions">曝光量</option><option value="clicks">点击量</option>
+              <option value="ctr">CTR</option><option value="conversion_rate">点击转化率</option>
+            </select>
+          </div>
+          <div v-if="creativeLoading" class="loading">正在加载图片...</div>
+          <div v-else-if="!displayedCreativeRows.length" class="empty">该商品暂无图片数据。</div>
+          <div v-else class="modal-creative-grid">
+            <div class="creative-card" v-for="(c,i) in displayedCreativeRows" :key="c.image_key||c.image_url">
+              <img :src="c.image_url" loading="lazy" @error="e=>e.target.style.visibility='hidden'">
+              <div class="info">
+                <div><span class="creative-rank">{{i+1}}</span><strong>{{c.image_type||'未分类'}}</strong></div>
+                <div class="metrics">
+                  <div><span>曝光</span> <strong>{{fmtInt(c.impressions)}}</strong></div>
+                  <div><span>点击</span> <strong>{{fmtInt(c.clicks)}}</strong></div>
+                  <div><span>CTR</span> <strong>{{fmtPct(c.ctr)}}</strong></div>
+                  <div><span>点击转化率</span> <strong>{{fmtPct(c.conversion_rate)}}</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
 
   </main>
@@ -577,9 +938,20 @@ const API='/api';
 createApp({
   setup(){
     // Nav
-    const modules=[{id:'overview',label:'📊 数据概览'},{id:'creative',label:'🎨 创意对比'},{id:'product',label:'📦 商品对比'},{id:'trend',label:'📈 趋势分析'},{id:'roi',label:'💰 投产比分析'},{id:'swap',label:'🔄 换图'}];
+    const modules=[
+      {id:'overview',label:'📊 观看概览'},
+      {id:'creative',label:'🎨 图片分析'},
+      {id:'trend',label:'📈 观看趋势'},
+      {id:'swap',label:'🔄 换图工作台'}
+    ];
     const current=ref('overview');
-    const switchModule=(id)=>{current.value=id;nextTick(()=>{if(id==='overview')renderOverview();if(id==='creative'){destroyCreativeCharts();if(creativeData.value)renderCreativeCharts();}if(id==='product'&&productAggs.value.length){nextTick(()=>renderProductCompare());}if(id==='trend'&&trendData.value)nextTick(()=>renderTrends());if(id==='roi'&&roiData.value)nextTick(()=>renderROI());});};
+    const switchModule=(id)=>{current.value=id;nextTick(()=>{
+      if(id==='overview')renderOverview();
+      if(id==='trend'){
+        if(trendData.value)renderTrends();
+        else loadTrends();
+      }
+    });};
 
     // Data
     const summary=ref(null);const stores=ref([]);const allProducts=ref([]);const overviewDateFrom=ref();const overviewDateTo=ref();const overviewStore=ref('');
@@ -589,21 +961,12 @@ createApp({
     const fmtMoney=v=>{if(v==null||v===0)return '0';return v.toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:0});};
     const fmtPct=v=>{if(v==null||v===0)return '0%';return (v*100).toFixed(2)+'%';};
 
-    // KPI 卡片维度切换
-    const kpiMetrics=[
-      {key:'impressions',label:'总曝光',color:'#0891b2',format:s=>fmtInt(s.total_impressions)},
-      {key:'clicks',label:'总点击',color:'#a855f7',format:s=>fmtInt(s.total_clicks)},
-      {key:'ctr',label:'整体CTR',color:'var(--red)',format:s=>fmtPct(s.overall_ctr)},
-      {key:'cvr',label:'整体转化率',color:'#eab308',format:s=>fmtPct(s.overall_conversion)},
-      {key:'transaction',label:'总交易额',color:'var(--green)',format:s=>'¥'+fmtMoney(s.total_transaction)},
-      {key:'net_transaction',label:'净交易额',color:'var(--accent2)',format:s=>'¥'+fmtMoney(s.total_net_transaction)},
-      {key:'orders',label:'总订单',color:'var(--orange)',format:s=>fmtInt(s.total_orders)},
-      {key:'products',label:'商品数',color:'var(--accent)',format:s=>s.total_products},
-      {key:'creatives',label:'创意总数',color:'var(--accent2)',format:s=>s.total_creatives},
-      {key:'stores',label:'店铺数',color:'#7c3aed',format:s=>s.total_stores},
+    const coreKpiMetrics=[
+      {key:'impressions',label:'总曝光',color:'#0891b2',hint:'图片被看到的总次数',format:s=>fmtInt(s.total_impressions)},
+      {key:'clicks',label:'总点击',color:'#0f766e',hint:'由图片带来的点击次数',format:s=>fmtInt(s.total_clicks)},
+      {key:'ctr',label:'整体 CTR',color:'#7c3aed',hint:'点击量 ÷ 曝光量',format:s=>fmtPct(s.overall_ctr)},
+      {key:'cvr',label:'点击转化率',color:'#d97706',hint:'订单量 ÷ 点击量',format:s=>fmtPct(s.overall_conversion)}
     ];
-    const kpiActive=ref(Object.fromEntries(kpiMetrics.map(m=>[m.key,true])));
-    const activeKpiMetrics=computed(()=>kpiMetrics.filter(m=>kpiActive.value[m.key]));
 
     // ======= MODULE 0: Overview =======
     const fetchSummary=async()=>{
@@ -617,28 +980,84 @@ createApp({
       const r2=await fetch(API+'/stores');stores.value=await r2.json();
       const r3=await fetch(API+'/products');allProducts.value=await r3.json();
       const r4=await fetch(API+'/products/aggregates');productAggs.value=await r4.json();
+      if(!swapProducts.value.length)await loadSwapProducts();
+      if(!creativeProduct.value&&productAggs.value.length){
+        const top=[...productAggs.value].sort((a,b)=>(b.total_impressions||0)-(a.total_impressions||0))[0];
+        const product=allProducts.value.find(p=>p.product_id===top.product_id)||top;
+        creativeProduct.value=product;creativeSearch.value=product.product_id;
+        loadCreativeData();
+      }
       nextTick(()=>renderOverview());
     };
     watch([overviewDateFrom,overviewDateTo,overviewStore],()=>{fetchSummary();});
 
     let overviewCharts={};
-    const sortedStores=computed(()=>[...stores.value].sort((a,b)=>b.creative_count-a.creative_count));
-    const maxStoreCount=computed(()=>stores.value.length?Math.max(...stores.value.map(s=>s.creative_count)):1);
-    const totalStoreCreatives=computed(()=>stores.value.reduce((s,x)=>s+x.creative_count,0));
+    const overviewTopProducts=computed(()=>[...productAggs.value]
+      .sort((a,b)=>(b.total_impressions||0)-(a.total_impressions||0))
+      .slice(0,10));
+    const lowCtrWatchlist=computed(()=>overviewTopProducts.value
+      .filter(p=>(p.total_impressions||0)>0)
+      .sort((a,b)=>(a.ctr||0)-(b.ctr||0))
+      .slice(0,3));
+    const highCtrWatchlist=computed(()=>[...productAggs.value]
+      .filter(p=>(p.total_impressions||0)>=10000)
+      .sort((a,b)=>(b.ctr||0)-(a.ctr||0))
+      .slice(0,3));
+    const openProductImages=(p)=>{
+      const product=allProducts.value.find(item=>item.product_id===p.product_id)||p;
+      creativeProduct.value=product;creativeSearch.value=product.product_id;creativeDate.value='';
+      quickCreativeOpen.value=true;loadCreativeData();
+    };
     const renderOverview=()=>{
       Object.values(overviewCharts).forEach(c=>c.destroy());
       if(!summary.value||!productAggs.value.length)return;
-      const top10=[...productAggs.value].sort((a,b)=>b.total_transaction-a.total_transaction).slice(0,10);
+      const top10=overviewTopProducts.value;
       overviewCharts.top=new Chart(document.getElementById('chartTopProducts'),{
-        type:'bar',data:{labels:top10.map(p=>p.product_id),datasets:[{label:'交易额(¥)',data:top10.map(p=>p.total_transaction),backgroundColor:'#4fc3f7'}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680',maxRotation:45},grid:{display:false}}}}
+        type:'bar',data:{labels:top10.map(p=>p.product_id),datasets:[{label:'曝光量',data:top10.map(p=>p.total_impressions||0),backgroundColor:'#38bdf8'}]},
+        options:{responsive:true,maintainAspectRatio:false,onClick:(_,items)=>{if(items.length)openProductImages(top10[items[0].index]);},plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680',maxRotation:45},grid:{display:false}}}}
       });
     };
 
     // ======= MODULE 1: Creative =======
     const creativeSearch=ref('');const showCreativeDropdown=ref(false);const creativeProduct=ref(null);
     const creativeData=ref(null);const creativeLoading=ref(false);const creativeDate=ref('');const creativeDates=ref([]);
-    let creativeCharts={};
+    const creativeSort=ref('impressions');const creativeMinImpressions=ref(0);
+    const quickCreativeOpen=ref(false);
+    let creativeLoadVersion=0;
+    const creativeImageKey=(url)=>{
+      const value=(url||'').trim();
+      if(!value)return '';
+      try{
+        const parsed=new URL(value,window.location.href);
+        return (parsed.origin+parsed.pathname).toLowerCase();
+      }catch(e){
+        return value.split('?')[0].toLowerCase();
+      }
+    };
+    const normalizeCreativeResponse=(data)=>{
+      const response=data||{};
+      const unique=new Map();
+      for(const [index,row] of (response.creatives||[]).entries()){
+        const imageKey=creativeImageKey(row.image_url)||`missing-image-${row.date||''}-${row.image_type||''}-${index}`;
+        const candidate={...row,image_key:imageKey};
+        const current=unique.get(imageKey);
+        if(!current){
+          unique.set(imageKey,candidate);
+          continue;
+        }
+        const candidateScore=(Number(candidate.impressions)||0)+(Number(candidate.clicks)||0);
+        const currentScore=(Number(current.impressions)||0)+(Number(current.clicks)||0);
+        if(candidateScore>currentScore)unique.set(imageKey,candidate);
+      }
+      const creatives=[...unique.values()].sort((a,b)=>(Number(b.impressions)||0)-(Number(a.impressions)||0));
+      return {...response,creatives,creative_count:creatives.length};
+    };
+    const displayedCreativeRows=computed(()=>{
+      const rows=[...(creativeData.value?.creatives||[])].filter(row=>
+        (Number(row.impressions)||0)>=creativeMinImpressions.value
+      );
+      return rows.sort((a,b)=>(Number(b[creativeSort.value])||0)-(Number(a[creativeSort.value])||0));
+    });
     const filteredCreativeProducts=computed(()=>{
       if(!creativeSearch.value)return allProducts.value.slice(0,20);
       const q=creativeSearch.value.toLowerCase();
@@ -648,57 +1067,38 @@ createApp({
       creativeProduct.value=p;creativeSearch.value=p.product_id;
       creativeDate.value='';showCreativeDropdown.value=false;loadCreativeData();
     };
-    const destroyCreativeCharts=()=>{Object.values(creativeCharts).forEach(c=>c.destroy());creativeCharts={};};
     const loadCreativeData=async()=>{
       if(!creativeProduct.value)return;
-      creativeLoading.value=true;destroyCreativeCharts();
-      let url=API+'/creatives?product_id='+creativeProduct.value.product_id;
+      const requestVersion=++creativeLoadVersion;
+      const productId=creativeProduct.value.product_id;
+      creativeLoading.value=true;
+      let url=API+'/creatives?product_id='+productId;
       if(creativeDate.value)url+='&date='+creativeDate.value;
       const r=await fetch(url);
-      creativeData.value=await r.json();creativeLoading.value=false;
-      if(!creativeDate.value&&creativeData.value.available_dates&&creativeData.value.available_dates.length){
-        creativeDates.value=creativeData.value.available_dates;
+      const response=await r.json();
+      if(requestVersion!==creativeLoadVersion)return;
+      if(!creativeDate.value&&response.available_dates&&response.available_dates.length){
+        creativeDates.value=response.available_dates;
         // auto-select latest date
-        creativeDate.value=creativeData.value.available_dates[creativeData.value.available_dates.length-1];
-        // reload with date
-        creativeLoading.value=true;destroyCreativeCharts();
-        const r2=await fetch(API+'/creatives?product_id='+creativeProduct.value.product_id+'&date='+creativeDate.value);
-        creativeData.value=await r2.json();creativeLoading.value=false;
+        creativeDate.value=response.available_dates[response.available_dates.length-1];
+        // 仅渲染选中日期的数据，避免“全部日期”中的重复图片键污染 DOM
+        const selectedDate=creativeDate.value;
+        const r2=await fetch(API+'/creatives?product_id='+productId+'&date='+selectedDate);
+        const datedResponse=await r2.json();
+        if(requestVersion!==creativeLoadVersion)return;
+        creativeData.value=normalizeCreativeResponse(datedResponse);
       }else{
-        creativeDates.value=creativeData.value.available_dates||[];
+        creativeData.value=normalizeCreativeResponse(response);
+        creativeDates.value=response.available_dates||[];
       }
-      nextTick(()=>renderCreativeCharts());
-    };
-    const renderCreativeCharts=()=>{
-      if(!creativeData.value||!creativeData.value.creatives.length)return;
-      const creatives=creativeData.value.creatives.slice(0,20);
-      const labels=creatives.map((c,i)=>c.image_type+' #'+(i+1));
-      const colors=['#4fc3f7','#26a69a','#ff9800','#ef5350','#ab47bc','#66bb6a','#ff7043','#42a5f5','#7e57c2','#ec407a'];
-      // Impressions vs Clicks
-      creativeCharts.imp=new Chart(document.getElementById('chartCreativeImpClicks'),{
-        type:'bar',data:{labels,datasets:[
-          {label:'曝光',data:creatives.map(c=>c.impressions||0),backgroundColor:colors[0]},
-          {label:'点击',data:creatives.map(c=>c.clicks||0),backgroundColor:colors[1]},
-        ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680',maxRotation:45},grid:{display:false}}}}
-      });
-      // CTR vs CVR
-      creativeCharts.ctr=new Chart(document.getElementById('chartCreativeCTRCVR'),{
-        type:'bar',data:{labels,datasets:[
-          {label:'CTR',data:creatives.map(c=>(c.ctr||0)*100),backgroundColor:colors[2]},
-          {label:'转化率',data:creatives.map(c=>(c.conversion_rate||0)*100),backgroundColor:colors[3]},
-        ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{callback:v=>v+'%',color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680',maxRotation:45},grid:{display:false}}}}
-      });
-      // Transaction
-      creativeCharts.trans=new Chart(document.getElementById('chartCreativeTrans'),{
-        type:'bar',data:{labels,datasets:[{label:'交易额(¥)',data:creatives.map(c=>c.transaction_amount||0),backgroundColor:creatives.map((_,i)=>colors[i%colors.length])}]},
-        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},y:{ticks:{color:'#666680'},grid:{display:false}}}}
-      });
+      if(requestVersion!==creativeLoadVersion)return;
+      creativeLoading.value=false;
     };
 
-    // ======= MODULE 2: Product Compare =======
-    const compareMetric=ref('total_transaction');const compareTop=ref(10);const compareSearch=ref('');
+    // 商品观看表现（合并在图片分析中）
+    const compareMetric=ref('total_impressions');const compareTop=ref(10);const compareSearch=ref('');
     const metricLabel=computed(()=>{
-      const map={total_transaction:'总交易额',total_orders:'总订单数',total_impressions:'总曝光',total_clicks:'总点击',ctr:'CTR',conversion_rate:'转化率',creative_count:'创意数'};
+      const map={total_transaction:'总交易额',total_orders:'总订单数',total_impressions:'曝光量',total_clicks:'点击量',ctr:'CTR',conversion_rate:'点击转化率',creative_count:'创意数'};
       return map[compareMetric.value]||compareMetric.value;
     });
     const displayProductAggs=computed(()=>{
@@ -708,34 +1108,13 @@ createApp({
       const sorted=list.sort((a,b)=>(b[compareMetric.value]||0)-(a[compareMetric.value]||0));
       return compareTop.value>0?sorted.slice(0,compareTop.value):sorted;
     });
-    const chartProductAggs=computed(()=>{
-      const sorted=[...productAggs.value].sort((a,b)=>(b[compareMetric.value]||0)-(a[compareMetric.value]||0));
-      return compareTop.value>0?sorted.slice(0,compareTop.value):sorted;
-    });
-    let productChart=null;
-    const compareDetail=ref(null);
-    const selectCompareProduct=(p)=>{compareDetail.value=p;};
-    const loadProductCompare=()=>{nextTick(()=>renderProductCompare());};
-    const renderProductCompare=()=>{
-      if(productChart)productChart.destroy();
-      if(!productAggs.value.length)return;
-      const data=chartProductAggs.value;
-      const labels=data.map(p=>p.product_id);
-      const values=data.map(p=>p[compareMetric.value]||0);
-      const isPct=compareMetric.value==='ctr'||compareMetric.value==='conversion_rate';
-      productChart=new Chart(document.getElementById('chartProductCompare'),{
-        type:'bar',data:{labels,datasets:[{label:metricLabel.value,data:values,backgroundColor:data.map((_,i)=>['#4fc3f7','#26a69a','#ff9800','#ef5350','#ab47bc','#66bb6a'][i%6])}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#666680',callback:isPct?v=>v*100+'%':undefined},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680',maxRotation:45},grid:{display:false}}}}
-      });
-    };
-
     // ======= MODULE 3: Trends =======
     const trendSearch=ref('');const showTrendDropdown=ref(false);const trendProduct=ref(null);
-    const trendMetric=ref('transaction_amount');const trendMode=ref('single');const trendMultiIds=ref([]);
-    const trendDateFrom=ref('');const trendDateTo=ref('');
-    const trendData=ref(null);const trendCreativeData=ref(null);const trendCreativeDate=ref('');const trendCreativeDates=ref([]);
-    const trendMetricLabel=computed(()=>{const m={transaction_amount:'交易额',order_count:'成交笔数',impressions:'曝光量',clicks:'点击量'};return m[trendMetric.value]||trendMetric.value;});
-    const topProducts=computed(()=>[...productAggs.value].sort((a,b)=>b.total_transaction-a.total_transaction));
+    const trendMetric=ref('impressions');const trendMode=ref('single');const trendMultiIds=ref([]);
+    const trendDateFrom=ref('');const trendDateTo=ref('');const trendQuickRange=ref('all');
+    const trendData=ref(null);
+    const trendMetricLabel=computed(()=>{const m={transaction_amount:'交易额',order_count:'成交笔数',impressions:'曝光量',clicks:'点击量',ctr:'CTR',conversion_rate:'点击转化率'};return m[trendMetric.value]||trendMetric.value;});
+    const topProducts=computed(()=>[...productAggs.value].sort((a,b)=>(b.total_impressions||0)-(a.total_impressions||0)));
     const filteredTrendProducts=computed(()=>{
       const q=(trendSearch.value||'').toLowerCase();
       const list=[{product_id:'',product_title:'全部商品',store_name:''},...allProducts.value];
@@ -751,10 +1130,25 @@ createApp({
       if(idx>=0)trendMultiIds.value.splice(idx,1);else trendMultiIds.value.push(id);
     };
     let trendChart=null;
-    const loadTrendCreatives=async()=>{
-      if(!trendProduct.value||!trendCreativeDate.value)return;
-      const cr=await fetch(API+'/creatives?product_id='+trendProduct.value.product_id+'&date='+trendCreativeDate.value);
-      trendCreativeData.value=await cr.json();
+    const fetchTrendSeries=async(pid,metric,dateParams)=>{
+      if(metric!=='ctr'&&metric!=='conversion_rate'){
+        const response=await fetch(API+'/trends?product_id='+pid+'&metric='+metric+dateParams);
+        return response.json();
+      }
+      const numeratorMetric=metric==='ctr'?'clicks':'order_count';
+      const denominatorMetric=metric==='ctr'?'impressions':'clicks';
+      const [numeratorResponse,denominatorResponse]=await Promise.all([
+        fetch(API+'/trends?product_id='+pid+'&metric='+numeratorMetric+dateParams),
+        fetch(API+'/trends?product_id='+pid+'&metric='+denominatorMetric+dateParams)
+      ]);
+      const [numerator,denominator]=await Promise.all([numeratorResponse.json(),denominatorResponse.json()]);
+      const numeratorByDate=new Map((numerator.trends||[]).map(item=>[item.date,item.value||0]));
+      return {
+        trends:(denominator.trends||[]).map(item=>({
+          date:item.date,
+          value:item.value?(numeratorByDate.get(item.date)||0)/item.value:0
+        }))
+      };
     };
     const loadTrends=async()=>{
       if(trendChart)trendChart.destroy();
@@ -766,181 +1160,401 @@ createApp({
           if(match)trendProduct.value=match;
         }
         const pid=trendProduct.value?trendProduct.value.product_id:'';
-        const r=await fetch(API+'/trends?product_id='+pid+'&metric='+trendMetric.value+dateParams);
-        trendData.value=await r.json();
-        // 单品模式加载创意图链接（默认最新日期）
-        if(pid){
-          const cr=await fetch(API+'/creatives?product_id='+pid);
-          const cd=await cr.json();
-          trendCreativeDates.value=cd.available_dates||[];
-          if(trendCreativeDates.value.length){
-            trendCreativeDate.value=trendCreativeDates.value[trendCreativeDates.value.length-1];
-            const cr2=await fetch(API+'/creatives?product_id='+pid+'&date='+trendCreativeDate.value);
-            trendCreativeData.value=await cr2.json();
-          }else{trendCreativeData.value=cd;}
-        }else{trendCreativeData.value=null;trendCreativeDates.value=[];trendCreativeDate.value='';}
+        trendData.value=await fetchTrendSeries(pid,trendMetric.value,dateParams);
         nextTick(()=>renderTrends());
       }else{
-        trendCreativeData.value=null;
         // Multi
         if(!trendMultiIds.value.length){trendMultiIds.value=topProducts.value.slice(0,3).map(p=>p.product_id);}
         const datasets=[];
-        for(const pid of trendMultiIds.value){
-          const r=await fetch(API+'/trends?product_id='+pid+'&metric='+trendMetric.value+dateParams);
-          const d=await r.json();
-          datasets.push({label:pid,data:d.trends.map(t=>({x:t.date,y:t.value})),borderColor:'#'+Math.floor(Math.random()*16777215).toString(16),tension:.3});
+        const colors=['#2563eb','#0f766e','#7c3aed','#d97706','#dc2626','#0891b2'];
+        for(const [index,pid] of trendMultiIds.value.entries()){
+          const d=await fetchTrendSeries(pid,trendMetric.value,dateParams);
+          datasets.push({label:pid,data:d.trends.map(t=>({x:t.date,y:t.value})),borderColor:colors[index%colors.length],tension:.3});
         }
         trendData.value={datasets};
         nextTick(()=>{renderMultiTrends(datasets);});
       }
     };
+    const toTrendIso=(date)=>[
+      date.getFullYear(),
+      String(date.getMonth()+1).padStart(2,'0'),
+      String(date.getDate()).padStart(2,'0')
+    ].join('-');
+    const applyTrendQuickRange=async(days)=>{
+      trendQuickRange.value=days?String(days):'all';
+      if(!days){
+        trendDateFrom.value='';
+        trendDateTo.value='';
+        await loadTrends();
+        return;
+      }
+      const availableDates=trendData.value&&trendData.value.trends?trendData.value.trends.map(item=>item.date).filter(Boolean):[];
+      const latest=availableDates.length?availableDates[availableDates.length-1]:toTrendIso(new Date());
+      const end=new Date(latest+'T00:00:00');
+      const start=new Date(end);
+      start.setDate(start.getDate()-(days-1));
+      trendDateFrom.value=toTrendIso(start);
+      trendDateTo.value=latest;
+      await loadTrends();
+    };
     const renderTrends=()=>{
       if(!trendData.value||!trendData.value.trends)return;
       const t=trendData.value.trends;
+      const isPct=trendMetric.value==='ctr'||trendMetric.value==='conversion_rate';
       trendChart=new Chart(document.getElementById('chartTrends'),{
         type:'line',data:{labels:t.map(d=>d.date),datasets:[{label:trendMetricLabel.value,data:t.map(d=>d.value),borderColor:'#4fc3f7',backgroundColor:'rgba(79,195,247,.1)',fill:true,tension:.3}]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680'},grid:{display:false}}}}
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680',callback:isPct?v=>(v*100).toFixed(1)+'%':v=>v.toLocaleString()},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680'},grid:{display:false}}}}
       });
     };
     const renderMultiTrends=(datasets)=>{
+      const isPct=trendMetric.value==='ctr'||trendMetric.value==='conversion_rate';
       trendChart=new Chart(document.getElementById('chartTrends'),{
         type:'line',data:{datasets},
-        options:{responsive:true,maintainAspectRatio:false,parsing:{xAxisKey:'x',yAxisKey:'y'},plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{type:'category',ticks:{color:'#666680'},grid:{display:false}}}}
-      });
-    };
-
-    // ======= MODULE 4: ROI =======
-    const roiStore=ref('');const roiProductId=ref('');const roiSearch=ref('');const showRoiDropdown=ref(false);
-    const roiDateFrom=ref('');const roiDateTo=ref('');
-    const roiData=ref(null);
-    const filteredRoiProducts=computed(()=>{
-      const q=(roiSearch.value||'').toLowerCase();
-      if(!q)return allProducts.value.slice(0,20);
-      return allProducts.value.filter(p=>(p.product_id||'').includes(q)||(p.product_title||'').toLowerCase().includes(q)).slice(0,20);
-    });
-    const selectRoiProduct=(p)=>{roiProductId.value=p.product_id;roiSearch.value=p.product_id;showRoiDropdown.value=false;loadROI();};
-    let roiCharts={};
-    const loadROI=async()=>{
-      Object.values(roiCharts).forEach(c=>c.destroy());roiCharts={};
-      let url=API+'/roi?';
-      if(roiStore.value)url+='store='+encodeURIComponent(roiStore.value)+'&';
-      if(roiProductId.value)url+='product_id='+roiProductId.value+'&';
-      if(roiDateFrom.value)url+='date_from='+roiDateFrom.value+'&';
-      if(roiDateTo.value)url+='date_to='+roiDateTo.value+'&';
-      const r=await fetch(url);roiData.value=await r.json();
-      nextTick(()=>renderROI());
-    };
-    const renderROI=()=>{
-      if(!roiData.value||!roiData.value.roi_data.length)return;
-      const d=roiData.value.roi_data;
-      // Bar: transaction vs net_transaction
-      roiCharts.bar=new Chart(document.getElementById('chartROIBar'),{
-        type:'bar',data:{labels:d.map(r=>r.date),datasets:[
-          {label:'交易额(¥)',data:d.map(r=>r.transaction),backgroundColor:'#66bb6a'},
-          {label:'净交易额(¥)',data:d.map(r=>r.net_transaction),backgroundColor:'#4fc3f7'},
-        ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680',maxRotation:45},grid:{display:false}}}}
-      });
-      // Line: CTR + CVR
-      roiCharts.roi=new Chart(document.getElementById('chartROILine'),{
-        type:'line',data:{labels:d.map(r=>r.date),datasets:[
-          {label:'CTR',data:d.map(r=>(r.ctr||0)*100),borderColor:'#4fc3f7',backgroundColor:'rgba(79,195,247,.1)',fill:true,tension:.3},
-          {label:'转化率',data:d.map(r=>(r.cvr||0)*100),borderColor:'#66bb6a',backgroundColor:'rgba(102,187,106,.1)',fill:true,tension:.3},
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680',callback:v=>v+'%'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680'},grid:{display:false}}}}
-      });
-      // Impressions vs Clicks
-      roiCharts.refund=new Chart(document.getElementById('chartRefund'),{
-        type:'line',data:{labels:d.map(r=>r.date),datasets:[
-          {label:'曝光',data:d.map(r=>r.impressions),borderColor:'#ff9800',backgroundColor:'rgba(255,152,0,.1)',fill:true,tension:.3},
-          {label:'点击',data:d.map(r=>r.clicks),borderColor:'#ab47bc',backgroundColor:'rgba(171,71,188,.1)',fill:true,tension:.3},
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680'},grid:{display:false}}}}
+        options:{responsive:true,maintainAspectRatio:false,parsing:{xAxisKey:'x',yAxisKey:'y'},plugins:{legend:{labels:{color:'#666680'}}},scales:{y:{ticks:{color:'#666680',callback:isPct?v=>(v*100).toFixed(1)+'%':v=>v.toLocaleString()},grid:{color:'#e0e0e0'}},x:{type:'category',ticks:{color:'#666680'},grid:{display:false}}}}
       });
     };
 
     // ======= MODULE 5: Swap Image =======
-    const swapSourceSearch=ref('');const swapTargetSearch=ref('');
-    const swapShowSource=ref(false);const swapShowTarget=ref(false);
     const swapSource=ref(null);const swapTargets=ref([]);
-    const swapSourceImages=ref([]);const swapSelectedImages=ref([]);
+    const swapProducts=ref([]);
+    const swapProductIdFilter=ref('');const swapStoreFilter=ref('');
+    const swapBrandFilter=ref('');const swapCodeFilter=ref('');
+    const swapDateFrom=ref('');const swapDateTo=ref('');const swapDateOpen=ref(false);
+    const swapDateOptions=ref([]);const swapDatePreset=ref('');
+    const swapAllSourceImages=ref([]);const swapSourceImages=ref([]);const swapSelectedImages=ref([]);
+    const swapSourceLoading=ref(false);const swapImageModalOpen=ref(false);
+    const swapTargetImageModalOpen=ref(false);const swapTargetImageProduct=ref(null);
+    const swapTargetImages=ref([]);const swapTargetImagesLoading=ref(false);
+    const swapTargetSelections=ref({});
     const swapPreview=ref(null);const swapStatus=ref(null);const swapExecuting=ref(false);
-    let swapAbortController=null;
-    const filteredSwapProducts=computed(()=>{
-      const q=(swapSourceSearch.value||'').toLowerCase();
-      if(!q)return allProducts.value.slice(0,20);
-      return allProducts.value.filter(p=>(p.product_id||'').includes(q)||(p.product_title||'').toLowerCase().includes(q)).slice(0,20);
-    });
-    const filteredSwapTargets=computed(()=>{
-      const q=(swapTargetSearch.value||'').toLowerCase();
-      if(!q)return allProducts.value.slice(0,20);
-      return allProducts.value.filter(p=>(p.product_id||'').includes(q)||(p.product_title||'').toLowerCase().includes(q)).slice(0,20);
-    });
-    const selectSwapSource=async(p)=>{
-      swapSource.value=p;swapSourceSearch.value=p.product_id;swapShowSource.value=false;
-      swapPreview.value=null;swapStatus.value=null;swapSelectedImages.value=[];
-      // 加载源商品所有图片
-      swapSourceImages.value=[];
-      const r=await fetch(API+'/swap-image/preview',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({source_product_id:p.product_id,target_product_ids:[p.product_id]})
-      });
-      const data=await r.json();
-      if(data.source_images)swapSourceImages.value=data.source_images;
-      if(swapSourceImages.value.length)swapSelectedImages.value=[swapSourceImages.value[0].image_url];
+    const SWAP_MEMORY_KEY='creative-testing-swap-selected-v1';
+    const loadSavedSwapMemory=()=>{
+      try{
+        const saved=JSON.parse(localStorage.getItem(SWAP_MEMORY_KEY)||'[]');
+        return Array.isArray(saved)?saved
+          .filter(item=>item&&item.source_product_id!=null&&item.image_url)
+          .map(item=>({
+            ...item,
+            source_product_id:String(item.source_product_id),
+            image_url:String(item.image_url)
+          })):[];
+      }catch(e){return [];}
     };
-    const toggleSwapImage=(url)=>{
+    const swapSelectedMemory=ref(loadSavedSwapMemory());
+    const persistSwapMemory=()=>{
+      try{localStorage.setItem(SWAP_MEMORY_KEY,JSON.stringify(swapSelectedMemory.value));}catch(e){}
+    };
+    let swapAbortController=null;
+    const loadSwapProducts=async()=>{
+      try{
+        const dateParams=new URLSearchParams();
+        if(swapDateFrom.value)dateParams.set('date_from',swapDateFrom.value);
+        if(swapDateTo.value)dateParams.set('date_to',swapDateTo.value);
+        const productUrl=API+'/swap-image/products'+(dateParams.toString()?'?'+dateParams.toString():'');
+        const [r,dateResponse]=await Promise.all([fetch(productUrl),fetch(API+'/dates')]);
+        if(!r.ok)throw new Error('接口未加载');
+        const rows=await r.json();
+        if(!Array.isArray(rows))throw new Error('商品列表格式错误');
+        swapProducts.value=rows;
+        if(dateResponse.ok){
+          const dates=await dateResponse.json();
+          swapDateOptions.value=Array.isArray(dates)?[...dates].sort((a,b)=>b.localeCompare(a)):[];
+        }
+      }catch(e){
+        swapProducts.value=productAggs.value.map(p=>({...p,date:'',image_url:'',brand:''}));
+      }
+    };
+    const swapStoreOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.store_name).filter(Boolean))].sort());
+    const swapBrandOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.brand).filter(Boolean))].sort());
+    const filteredSwapProductRows=computed(()=>{
+      const idq=(swapProductIdFilter.value||'').trim().toLowerCase();
+      const codeq=(swapCodeFilter.value||'').trim().toLowerCase();
+      return swapProducts.value.filter(p=>{
+        const idMatch=!idq||(p.product_id||'').toLowerCase().includes(idq)||(p.product_title||'').toLowerCase().includes(idq);
+        const storeMatch=!swapStoreFilter.value||p.store_name===swapStoreFilter.value;
+        const brandMatch=!swapBrandFilter.value||p.brand===swapBrandFilter.value;
+        const codeMatch=!codeq||(p.product_code||'').toLowerCase().includes(codeq);
+        return idMatch&&storeMatch&&brandMatch&&codeMatch;
+      }).slice(0,300);
+    });
+    const filteredSwapTargetRows=computed(()=>filteredSwapProductRows.value.filter(p=>
+      !swapSource.value||p.product_id!==swapSource.value.product_id
+    ));
+    const dedupeSwapImages=(images)=>{
+      const byUrl=new Map();
+      for(const image of images||[]){
+        const url=(image.image_url||'').trim();
+        if(!url)continue;
+        const current=byUrl.get(url);
+        if(!current){
+          byUrl.set(url,{
+            ...image,
+            image_url:url,
+            impressions:Number(image.impressions)||0,
+            clicks:Number(image.clicks)||0,
+            order_count:Number(image.order_count)||0,
+            transaction_amount:Number(image.transaction_amount)||0,
+            net_transaction:Number(image.net_transaction)||0
+          });
+        }else{
+          current.impressions+=(Number(image.impressions)||0);
+          current.clicks+=(Number(image.clicks)||0);
+          current.order_count+=(Number(image.order_count)||0);
+          current.transaction_amount+=(Number(image.transaction_amount)||0);
+          current.net_transaction+=(Number(image.net_transaction)||0);
+          if(!current.image_type&&image.image_type)current.image_type=image.image_type;
+        }
+      }
+      return [...byUrl.values()].map(image=>({
+        ...image,
+        date:swapDateFrom.value?(swapDateTo.value||swapDateFrom.value):'',
+        ctr:image.impressions?image.clicks/image.impressions:0,
+        conversion_rate:image.clicks?image.order_count/image.clicks:0
+      })).sort((a,b)=>(b.impressions||0)-(a.impressions||0));
+    };
+    const applySwapDateFilter=()=>{
+      const rows=swapAllSourceImages.value.filter(image=>
+        (!swapDateFrom.value||image.date>=swapDateFrom.value)
+        &&(!swapDateTo.value||image.date<=swapDateTo.value)
+      );
+      swapSourceImages.value=dedupeSwapImages(rows);
+    };
+    const filterSwapImagesByDate=(rows)=>dedupeSwapImages((rows||[]).filter(image=>
+      (!swapDateFrom.value||image.date>=swapDateFrom.value)
+      &&(!swapDateTo.value||image.date<=swapDateTo.value)
+    ));
+    const handleSwapDateChange=async()=>{
+      applySwapDateFilter();
+      await loadSwapProducts();
+      if(swapSource.value){
+        const refreshed=swapProducts.value.find(p=>p.product_id===swapSource.value.product_id);
+        if(refreshed)swapSource.value=refreshed;
+      }
+    };
+    const swapWeekdays=['日','一','二','三','四','五','六'];
+    const swapDatePresets=[
+      {key:'today',label:'今日'},{key:'yesterday',label:'昨日'},{key:'last7',label:'近7日'},
+      {key:'last30',label:'近30日'},{key:'week',label:'本周'},{key:'month',label:'本月'}
+    ];
+    const toSwapIso=(date)=>{
+      const y=date.getFullYear();const m=String(date.getMonth()+1).padStart(2,'0');const d=String(date.getDate()).padStart(2,'0');
+      return `${y}-${m}-${d}`;
+    };
+    const fromSwapIso=(value)=>new Date(value+'T00:00:00');
+    const shiftSwapDays=(date,amount)=>{const next=new Date(date);next.setDate(next.getDate()+amount);return next};
+    const swapCalendarAnchor=ref(new Date(new Date().getFullYear(),new Date().getMonth(),1));
+    const buildSwapMonth=(offset)=>{
+      const first=new Date(swapCalendarAnchor.value.getFullYear(),swapCalendarAnchor.value.getMonth()+offset,1);
+      const gridStart=new Date(first);gridStart.setDate(1-first.getDay());
+      const days=Array.from({length:42},(_,i)=>{
+        const date=shiftSwapDays(gridStart,i);
+        return {date:toSwapIso(date),day:date.getDate(),current:date.getMonth()===first.getMonth()};
+      });
+      return {key:`${first.getFullYear()}-${first.getMonth()}`,label:`${first.getFullYear()}年${first.getMonth()+1}月`,days};
+    };
+    const swapCalendarMonths=computed(()=>[buildSwapMonth(0),buildSwapMonth(1)]);
+    const swapDateRangeLabel=computed(()=>{
+      if(!swapDateFrom.value)return '全部图片日期';
+      if(!swapDateTo.value||swapDateFrom.value===swapDateTo.value)return swapDateFrom.value;
+      return `${swapDateFrom.value.slice(5).replace('-','/')} — ${swapDateTo.value.slice(5).replace('-','/')}`;
+    });
+    const swapDateSummaryLabel=computed(()=>{
+      if(!swapDateFrom.value)return '全部';
+      if(!swapDateTo.value||swapDateFrom.value===swapDateTo.value)return swapDateFrom.value;
+      return `${swapDateFrom.value} 至 ${swapDateTo.value}`;
+    });
+    const swapDateSelectionLabel=computed(()=>{
+      if(!swapDateFrom.value)return '尚未选择';
+      return `${swapDateFrom.value}${swapDateTo.value?' — '+swapDateTo.value:' — 请选择结束日期'}`;
+    });
+    const moveSwapCalendar=(amount)=>{
+      swapCalendarAnchor.value=new Date(swapCalendarAnchor.value.getFullYear(),swapCalendarAnchor.value.getMonth()+amount,1);
+    };
+    const isSwapDateInRange=(date)=>!!(swapDateFrom.value&&swapDateTo.value&&date>=swapDateFrom.value&&date<=swapDateTo.value);
+    const isSwapDateEdge=(date)=>date===swapDateFrom.value||date===swapDateTo.value;
+    const chooseSwapCalendarDay=async(date)=>{
+      swapDatePreset.value='';
+      if(!swapDateFrom.value||swapDateTo.value){
+        swapDateFrom.value=date;swapDateTo.value='';
+      }else{
+        if(date<swapDateFrom.value){
+          swapDateTo.value=swapDateFrom.value;swapDateFrom.value=date;
+        }else{
+          swapDateTo.value=date;
+        }
+        swapDateOpen.value=false;
+        await handleSwapDateChange();
+      }
+    };
+    const setSwapQuickRange=async(key)=>{
+      const today=new Date();let from=new Date(today);let to=new Date(today);
+      if(key==='yesterday'){from=shiftSwapDays(today,-1);to=new Date(from)}
+      if(key==='last7')from=shiftSwapDays(today,-6);
+      if(key==='last30')from=shiftSwapDays(today,-29);
+      if(key==='week'){const day=today.getDay()||7;from=shiftSwapDays(today,1-day)}
+      if(key==='month')from=new Date(today.getFullYear(),today.getMonth(),1);
+      swapDateFrom.value=toSwapIso(from);swapDateTo.value=toSwapIso(to);swapDatePreset.value=key;
+      swapCalendarAnchor.value=new Date(from.getFullYear(),from.getMonth(),1);
+      swapDateOpen.value=false;
+      await handleSwapDateChange();
+    };
+    const clearSwapDateRange=async()=>{
+      swapDateFrom.value='';swapDateTo.value='';swapDatePreset.value='';swapDateOpen.value=false;
+      await handleSwapDateChange();
+    };
+    const selectSwapSource=async(p)=>{
+      swapSource.value=p;swapImageModalOpen.value=true;
+      swapPreview.value=null;swapStatus.value=null;
+      swapSelectedImages.value=swapSelectedMemory.value
+        .filter(item=>String(item.source_product_id)===String(p.product_id))
+        .map(item=>item.image_url);
+      swapAllSourceImages.value=[];swapSourceImages.value=[];swapSourceLoading.value=true;
+      try{
+        const r=await fetch(API+'/creatives?product_id='+encodeURIComponent(p.product_id));
+        const data=await r.json();
+        swapAllSourceImages.value=data.creatives||[];
+        applySwapDateFilter();
+      }catch(e){
+        swapStatus.value={success:false,message:'图片信息加载失败: '+e.message};
+      }finally{
+        swapSourceLoading.value=false;
+      }
+    };
+    const toggleSwapImage=(img)=>{
+      if(!swapSource.value||!img.image_url)return;
+      const url=img.image_url;
       const idx=swapSelectedImages.value.indexOf(url);
-      if(idx>=0)swapSelectedImages.value.splice(idx,1);
-      else swapSelectedImages.value.push(url);
+      const memoryIndex=swapSelectedMemory.value.findIndex(item=>
+        String(item.source_product_id)===String(swapSource.value.product_id)&&item.image_url===url
+      );
+      if(idx>=0){
+        swapSelectedImages.value.splice(idx,1);
+        if(memoryIndex>=0)swapSelectedMemory.value.splice(memoryIndex,1);
+      }else{
+        swapSelectedImages.value.push(url);
+        if(memoryIndex<0)swapSelectedMemory.value.push({
+          source_product_id:String(swapSource.value.product_id),
+          store_name:swapSource.value.store_name||'',
+          brand:swapSource.value.brand||'',
+          product_code:swapSource.value.product_code||'',
+          image_url:url,
+          image_type:img.image_type||'',
+          date:img.date||'',
+          impressions:img.impressions||0,
+          clicks:img.clicks||0,
+          ctr:img.ctr||0,
+          conversion_rate:img.conversion_rate||0,
+        });
+      }
+      persistSwapMemory();
+      swapPreview.value=null;
+    };
+    const removeSwapMemoryItem=(item)=>{
+      swapSelectedMemory.value=swapSelectedMemory.value.filter(x=>
+        !(String(x.source_product_id)===String(item.source_product_id)&&x.image_url===item.image_url)
+      );
+      if(swapSource.value&&String(swapSource.value.product_id)===String(item.source_product_id)){
+        swapSelectedImages.value=swapSelectedImages.value.filter(url=>url!==item.image_url);
+      }
+      persistSwapMemory();swapPreview.value=null;
+    };
+    const clearSwapMemory=()=>{
+      swapSelectedMemory.value=[];swapSelectedImages.value=[];
+      persistSwapMemory();swapPreview.value=null;
+    };
+    const swapTargetSelectionCount=(productId)=>(swapTargetSelections.value[productId]||[]).length;
+    const swapTargetSelectedCount=computed(()=>Object.values(swapTargetSelections.value)
+      .reduce((total,urls)=>total+urls.length,0));
+    const swapTargetBackendReady=computed(()=>!!(swapPreview.value&&swapPreview.value.supports_target_selection));
+    const swapServerQueueReady=computed(()=>!!(swapPreview.value&&swapPreview.value.supports_server_queue));
+    const swapTargetImageSelected=(url)=>{
+      const productId=swapTargetImageProduct.value&&swapTargetImageProduct.value.product_id;
+      return !!productId&&(swapTargetSelections.value[productId]||[]).includes(url);
     };
     const selectSwapTarget=(p)=>{
       if(!swapTargets.value.find(t=>t.product_id===p.product_id)){
         swapTargets.value.push(p);
       }
-      swapTargetSearch.value='';swapShowTarget.value=false;
+      swapPreview.value=null;swapStatus.value=null;
+    };
+    const openSwapTargetImages=async(p)=>{
+      swapTargetImageProduct.value=p;swapTargetImageModalOpen.value=true;
+      swapTargetImages.value=[];swapTargetImagesLoading.value=true;
+      swapPreview.value=null;swapStatus.value=null;
+      try{
+        const response=await fetch(API+'/creatives?product_id='+encodeURIComponent(p.product_id));
+        const data=await response.json();
+        swapTargetImages.value=filterSwapImagesByDate(data.creatives||[]);
+      }catch(e){
+        swapStatus.value={success:false,message:'目标图片信息加载失败: '+e.message};
+      }finally{
+        swapTargetImagesLoading.value=false;
+      }
+    };
+    const toggleSwapTargetImage=(img)=>{
+      if(!swapTargetImageProduct.value||!img.image_url)return;
+      const product=swapTargetImageProduct.value;
+      const productId=product.product_id;
+      const current=[...(swapTargetSelections.value[productId]||[])];
+      const index=current.indexOf(img.image_url);
+      if(index>=0)current.splice(index,1);else current.push(img.image_url);
+      const next={...swapTargetSelections.value};
+      if(current.length){
+        next[productId]=current;
+        selectSwapTarget(product);
+      }else{
+        delete next[productId];
+        swapTargets.value=swapTargets.value.filter(t=>t.product_id!==productId);
+      }
+      swapTargetSelections.value=next;
       swapPreview.value=null;swapStatus.value=null;
     };
     const removeSwapTarget=(t)=>{
       swapTargets.value=swapTargets.value.filter(x=>x.product_id!==t.product_id);
+      const next={...swapTargetSelections.value};delete next[t.product_id];swapTargetSelections.value=next;
       swapPreview.value=null;
     };
     const removeSwapTargetById=(id)=>{
       swapTargets.value=swapTargets.value.filter(x=>x.product_id!==id);
+      const next={...swapTargetSelections.value};delete next[id];swapTargetSelections.value=next;
       if(!swapTargets.value.length)swapPreview.value=null;
       else previewSwap();
     };
-    const swapOverLimit=computed(()=>{
-      if(!swapPreview.value||!swapPreview.value.targets)return false;
-      const minEmpty=Math.min(...swapPreview.value.targets.map(t=>t.empty_slots));
-      return swapSelectedImages.value.length > minEmpty;
-    });
-    const swapMinEmpty=computed(()=>{
-      if(!swapPreview.value||!swapPreview.value.targets)return 0;
-      return Math.min(...swapPreview.value.targets.map(t=>t.empty_slots));
-    });
+    const swapOverLimit=computed(()=>swapTargets.value.some(t=>
+      swapTargetSelectionCount(t.product_id)>swapSelectedImages.value.length
+    ));
     const previewSwap=async()=>{
       if(!swapSource.value||!swapTargets.value.length||!swapSelectedImages.value.length)return;
       const r=await fetch(API+'/swap-image/preview',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({source_product_id:swapSource.value.product_id,target_product_ids:swapTargets.value.map(t=>t.product_id)})
+        body:JSON.stringify({
+          source_product_id:swapSource.value.product_id,
+          target_product_ids:swapTargets.value.map(t=>t.product_id),
+          target_image_urls:swapTargetSelections.value
+        })
       });
       swapPreview.value=await r.json();
       swapStatus.value=null;
     };
     let swapStatusTimer = null;
     const executeSwap=async()=>{
-      if(!swapSource.value||!swapTargets.value.length||!swapSelectedImages.value.length)return;
+      if(!swapSource.value||!swapTargets.value.length||!swapSelectedImages.value.length||swapOverLimit.value||!swapTargetBackendReady.value||!swapServerQueueReady.value)return;
       swapExecuting.value=true;swapStatus.value=null;
       swapAbortController=new AbortController();
       try{
         const r=await fetch(API+'/swap-image/execute',{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({source_product_id:swapSource.value.product_id,source_image_urls:swapSelectedImages.value,target_product_ids:swapTargets.value.map(t=>t.product_id)}),
+          body:JSON.stringify({
+            source_product_id:swapSource.value.product_id,
+            source_image_urls:swapSelectedImages.value,
+            target_product_ids:swapTargets.value.map(t=>t.product_id),
+            target_image_urls:swapTargetSelections.value
+          }),
           signal:swapAbortController.signal
         });
         const result=await r.json();
         if(result.success && result.job_id){
-          swapStatus.value={success:true,message:'RPA已启动 ('+result.job_id+')'};
+          swapStatus.value={success:true,message:(result.message||'换图任务已提交')+' ('+result.job_id+')'};
           // poll for progress
           swapStatusTimer=setInterval(async()=>{
             try{
@@ -948,8 +1562,7 @@ createApp({
               const progress=await pr.json();
               if(progress.status==='done'){
                 clearInterval(swapStatusTimer);
-                const ok=progress.ok||0,fail=progress.fail||0,filled=progress.total_filled||0;
-                swapStatus.value={success:fail===0,message:'完成: '+ok+'/'+(ok+fail)+' 商品成功, 共填入'+filled+'张图'};
+                swapStatus.value={success:true,message:'Excel 已由接收电脑下载完成'+(progress.claimed_by?'（'+progress.claimed_by+'）':'')};
                 swapExecuting.value=false;
               }else if(progress.status==='failed'){
                 clearInterval(swapStatusTimer);
@@ -957,6 +1570,14 @@ createApp({
                 swapExecuting.value=false;
               }else if(progress.status==='running'){
                 swapStatus.value={success:true,message:'进行中... '+progress.completed+'/'+progress.total_targets+(progress.current?' 当前:'+progress.current:'')};
+              }else if(progress.status==='queued'||progress.status==='pending'){
+                swapStatus.value={success:true,message:'等待监听电脑接收 Excel... ('+result.job_id+')'};
+              }else if(progress.status==='claimed'){
+                swapStatus.value={success:true,message:'接收电脑正在下载 Excel...'};
+              }else if(progress.status==='stopped'){
+                clearInterval(swapStatusTimer);
+                swapStatus.value={success:false,message:'任务已停止'};
+                swapExecuting.value=false;
               }
             }catch(e){/* polling error, ignore */}
           },2000);
@@ -1027,22 +1648,31 @@ createApp({
         overviewDateTo.value=e.detail.to||'';
         fetchSummary();
       });
+      document.addEventListener('keydown',(e)=>{
+        if(e.key==='Escape'){
+          quickCreativeOpen.value=false;
+          swapImageModalOpen.value=false;
+          swapTargetImageModalOpen.value=false;
+          swapDateOpen.value=false;
+        }
+      });
     });
-    // Watch compare metric changes
-    watch(compareMetric,()=>{if(current.value==='product')nextTick(()=>renderProductCompare());});
-    watch(compareTop,()=>{if(current.value==='product')nextTick(()=>renderProductCompare());});
-
     // Click outside dropdown
-    document.addEventListener('click',(e)=>{if(!e.target.closest('.autocomplete')){showCreativeDropdown.value=false;showTrendDropdown.value=false;showRoiDropdown.value=false;swapShowSource.value=false;swapShowTarget.value=false;}});
+    document.addEventListener('click',(e)=>{if(!e.target.closest('.autocomplete')){showCreativeDropdown.value=false;showTrendDropdown.value=false;}});
 
     return{modules,current,switchModule,
-      summary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,sortedStores,maxStoreCount,totalStoreCreatives,productAggs,displayProductAggs,chartProductAggs,kpiMetrics,kpiActive,activeKpiMetrics,
+      summary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,productAggs,displayProductAggs,coreKpiMetrics,overviewTopProducts,lowCtrWatchlist,highCtrWatchlist,openProductImages,quickCreativeOpen,
       fmtInt,fmtMoney,fmtPct,
-      creativeSearch,showCreativeDropdown,filteredCreativeProducts,selectCreativeProduct,creativeProduct,creativeData,creativeLoading,creativeDate,creativeDates,loadCreativeData,
-      compareMetric,compareTop,compareSearch,compareDetail,metricLabel,chartProductAggs,selectCompareProduct,loadProductCompare,
-      trendSearch,showTrendDropdown,trendProduct,trendMetric,trendMode,trendMultiIds,trendDateFrom,trendDateTo,trendData,trendCreativeData,trendCreativeDate,trendCreativeDates,loadTrendCreatives,topProducts,filteredTrendProducts,selectTrendProduct,toggleTrendMulti,loadTrends,trendMetricLabel,
-      roiStore,roiProductId,roiSearch,roiDateFrom,roiDateTo,showRoiDropdown,roiData,filteredRoiProducts,selectRoiProduct,loadROI,
-      swapSourceSearch,swapTargetSearch,swapShowSource,swapShowTarget,swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapOverLimit,swapMinEmpty,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,filteredSwapProducts,filteredSwapTargets,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,executeSwap,
+      creativeSearch,showCreativeDropdown,filteredCreativeProducts,selectCreativeProduct,creativeProduct,creativeData,creativeLoading,creativeDate,creativeDates,creativeSort,creativeMinImpressions,displayedCreativeRows,loadCreativeData,
+      compareMetric,compareTop,compareSearch,metricLabel,
+      trendSearch,showTrendDropdown,trendProduct,trendMetric,trendMode,trendMultiIds,trendDateFrom,trendDateTo,trendQuickRange,trendData,topProducts,filteredTrendProducts,selectTrendProduct,toggleTrendMulti,loadTrends,trendMetricLabel,applyTrendQuickRange,
+      swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapOverLimit,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,executeSwap,
+      swapTargetImageModalOpen,swapTargetImageProduct,swapTargetImages,swapTargetImagesLoading,swapTargetSelections,swapTargetSelectionCount,swapTargetSelectedCount,swapTargetBackendReady,swapServerQueueReady,swapTargetImageSelected,openSwapTargetImages,toggleSwapTargetImage,
+      swapProducts,swapProductIdFilter,swapStoreFilter,swapBrandFilter,swapCodeFilter,swapStoreOptions,swapBrandOptions,filteredSwapProductRows,swapSourceLoading,swapImageModalOpen,swapSelectedMemory,removeSwapMemoryItem,clearSwapMemory,
+      filteredSwapTargetRows,
+      swapDateFrom,swapDateTo,swapDateOpen,swapDateOptions,swapDatePreset,swapDatePresets,swapWeekdays,swapCalendarMonths,
+      swapDateRangeLabel,swapDateSummaryLabel,swapDateSelectionLabel,moveSwapCalendar,isSwapDateInRange,isSwapDateEdge,
+      chooseSwapCalendarDay,setSwapQuickRange,clearSwapDateRange,applySwapDateFilter,handleSwapDateChange,
     };
   }
 }).mount('#app');

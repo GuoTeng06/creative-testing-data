@@ -1,3 +1,5 @@
 @echo off
-"C:\Program Files\ShadowBot\shadowbot-6.2.23\python\python.exe" C:\Users\s\Desktop\cetu-dashboard\mysql_proxy.py
+chcp 65001 >nul
+cd /d "%~dp0"
+"C:\Program Files\ShadowBot\shadowbot-6.2.23\python\python.exe" "%~dp0mysql_proxy.py"
 pause

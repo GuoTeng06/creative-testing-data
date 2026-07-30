@@ -61,6 +61,7 @@ def _parse_row(row_dict):
         'product_id': str(row_dict.get('商品ID', '')),
         'date': str(row_dict.get('日期', '')),
         'product_title': str(row_dict.get('商品标题', '')),
+        'brand': str(row_dict.get('品牌', '')),
         'product_code': str(row_dict.get('商品编码', '')),
         'image_url': str(row_dict.get('推广创意', '')),
         'image_type': str(row_dict.get('图片类型', '')),
@@ -115,6 +116,7 @@ def load_all_data(force=False):
             products[pid] = {
                 'product_id': pid,
                 'product_title': rec['product_title'],
+                'brand': rec['brand'],
                 'product_code': rec['product_code'],
                 'store_name': rec['store_name'],
             }

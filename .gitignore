@@ -6,9 +6,13 @@ env/
 venv/
 *.egg-info/
 .DS_Store
+.artifact-runtime/
 start_backend.bat
 rpa/swap_progress/
 rpa/swap_downloads/
+rpa/received_excel/
 rpa/swap_log.txt
 backend/stdout.log
 backend/stderr.log
+swap_tasks/*
+!swap_tasks/.gitkeep

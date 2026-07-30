@@ -116,6 +116,44 @@ async def find_empty_slot_indices(page):
     return empty_indices
 
 
+async def find_selected_slot_indices(page, selected_urls):
+    """Locate upload slots whose current image matches one of the selected target URLs."""
+    return await page.evaluate('''(selectedUrls) => {
+        var selectors = [
+            '[class*="image-item"]', '[class*="img-item"]',
+            '[class*="image-upload"]', '[class*="upload-item"]',
+            '.image-list > div', '[class*="picture"]',
+        ];
+        var containers = [];
+        for (var s = 0; s < selectors.length; s++) {
+            var found = document.querySelectorAll(selectors[s]);
+            if (found.length >= 5) { containers = Array.from(found); break; }
+        }
+        if (containers.length === 0) {
+            var inputs = document.querySelectorAll('input[type="file"]');
+            containers = Array.from(inputs).map(function(el) { return el.closest('div, li, section') || el.parentElement; });
+        }
+        function keys(value) {
+            if (!value) return [];
+            var clean = String(value).split('?')[0].split('#')[0];
+            var parts = clean.split('/');
+            var filename = decodeURIComponent(parts[parts.length - 1] || '');
+            return [clean, filename].filter(Boolean);
+        }
+        var wanted = new Set();
+        selectedUrls.forEach(function(url) { keys(url).forEach(function(key) { wanted.add(key); }); });
+        var matched = [];
+        containers.forEach(function(el, index) {
+            var images = Array.from(el.querySelectorAll('img[src]'));
+            var found = images.some(function(img) {
+                return keys(img.currentSrc || img.src).some(function(key) { return wanted.has(key); });
+            });
+            if (found) matched.push(index);
+        });
+        return matched;
+    }''', selected_urls)
+
+
 async def try_connect_cdp(port=9222):
     """Try connecting to already-running Chrome via CDP"""
     from playwright.async_api import async_playwright
@@ -189,7 +227,7 @@ async def swap_images(command_json):
     source_images = source["images"]
 
     log("=" * 50)
-    log("swap v2.2 start")
+    log("swap v2.3 start")
     log("source: %s | images: %d" % (source_pid, len(source_images)))
     log("targets: %d products" % len(targets))
 
@@ -264,10 +302,11 @@ async def swap_images(command_json):
     for i, target in enumerate(targets):
         target_pid = target["product_id"]
         backend_empty = target.get("empty_slots", 0)
-        max_fill = min(len(downloaded), backend_empty)
+        replace_urls = target.get("replace_image_urls", []) or []
+        max_fill = min(len(downloaded), len(replace_urls) if replace_urls else backend_empty)
 
-        log("\n[%d/%d] target: %s (empty_slots=%d max_fill=%d)" % (
-            i + 1, total_phases, target_pid, backend_empty, max_fill))
+        log("\n[%d/%d] target: %s (selected=%d empty_slots=%d max_fill=%d)" % (
+            i + 1, total_phases, target_pid, len(replace_urls), backend_empty, max_fill))
 
         write_progress({
             "phase": "swapping",
@@ -278,8 +317,8 @@ async def swap_images(command_json):
         })
 
         if max_fill <= 0:
-            log("  skip: no empty slots")
-            results.append({"product_id": target_pid, "success": True, "message": "No empty slots", "filled": 0})
+            log("  skip: no selected or empty slots")
+            results.append({"product_id": target_pid, "success": True, "message": "No target slots", "filled": 0})
             continue
 
         try:
@@ -295,6 +334,17 @@ async def swap_images(command_json):
 
             empty_indices = await find_empty_slot_indices(page)
             log("  empty slots: %d (indices: %s)" % (len(empty_indices), empty_indices[:10]))
+            selected_indices = await find_selected_slot_indices(page, replace_urls) if replace_urls else []
+            if replace_urls:
+                log("  selected target slots: %d (indices: %s)" % (len(selected_indices), selected_indices[:10]))
+                if len(selected_indices) < len(replace_urls):
+                    results.append({
+                        "product_id": target_pid,
+                        "success": False,
+                        "error": "Could not locate all selected target images in editor",
+                    })
+                    continue
+            desired_indices = selected_indices if replace_urls else empty_indices
 
             file_inputs = await page.query_selector_all("input[type='file']")
             log("  file inputs: %d" % len(file_inputs))
@@ -309,7 +359,7 @@ async def swap_images(command_json):
             filled = 0
             used = set()
 
-            for slot_idx in empty_indices:
+            for slot_idx in desired_indices:
                 if filled >= max_fill:
                     break
                 if slot_idx < len(file_inputs) and slot_idx not in used:
@@ -322,18 +372,19 @@ async def swap_images(command_json):
                     except Exception as e:
                         log("  FAIL slot[%d]: %s" % (slot_idx, e))
 
-            for fi_idx in range(len(file_inputs)):
-                if filled >= max_fill:
-                    break
-                if fi_idx not in used:
-                    try:
-                        await file_inputs[fi_idx].set_input_files(downloaded[filled]["path"])
-                        log("  OK input#%d <- %s (fallback)" % (fi_idx, os.path.basename(downloaded[filled]["path"])[:30]))
-                        used.add(fi_idx)
-                        filled += 1
-                        await page.wait_for_timeout(1500)
-                    except Exception as e:
-                        log("  FAIL input#%d: %s" % (fi_idx, e))
+            if not replace_urls:
+                for fi_idx in range(len(file_inputs)):
+                    if filled >= max_fill:
+                        break
+                    if fi_idx not in used:
+                        try:
+                            await file_inputs[fi_idx].set_input_files(downloaded[filled]["path"])
+                            log("  OK input#%d <- %s (fallback)" % (fi_idx, os.path.basename(downloaded[filled]["path"])[:30]))
+                            used.add(fi_idx)
+                            filled += 1
+                            await page.wait_for_timeout(1500)
+                        except Exception as e:
+                            log("  FAIL input#%d: %s" % (fi_idx, e))
 
             if filled == 0:
                 results.append({"product_id": target_pid, "success": False, "error": "Could not upload any image"})
