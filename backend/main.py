@@ -4,16 +4,21 @@
 """
 import sys
 import os
+import json
+import re
+import threading
+import uuid
+from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from data_loader import (
     load_all_data, get_summary, get_products, get_creatives_by_product,
     get_trends, get_product_aggregates
 )
-import requests
+from swap_workbook import build_swap_workbook
 
 app = FastAPI(title="测图数据看板 API", version="2.0.0")
 
@@ -92,6 +97,7 @@ def api_creatives(product_id: str = Query(...), date: str = Query(None)):
     return {
         'product_id': product_id,
         'product_title': product_info.get('product_title', ''),
+        'brand': product_info.get('brand', ''),
         'product_code': product_info.get('product_code', ''),
         'store_name': product_info.get('store_name', ''),
         'creative_count': len(creatives),
@@ -188,9 +194,114 @@ def api_dates():
 
 # ===== 换图 =====
 
-RPA_TARGET = "http://192.168.16.38:8767"
 TOTAL_IMAGE_SLOTS = 10
 SLOT_IMAGE_TYPES = {'主轮播图', '副轮播图'}
+SWAP_TASK_DIR = os.path.abspath(os.getenv(
+    "SWAP_TASK_DIR",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "swap_tasks"),
+))
+SWAP_TASK_LEASE_SECONDS = int(os.getenv("SWAP_TASK_LEASE_SECONDS", "180"))
+SWAP_TASK_LOCK = threading.Lock()
+os.makedirs(SWAP_TASK_DIR, exist_ok=True)
+
+
+def _utc_now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _task_json_path(job_id):
+    if not re.fullmatch(r"[a-f0-9]{12}", str(job_id or "")):
+        raise ValueError("invalid job id")
+    return os.path.join(SWAP_TASK_DIR, f"{job_id}.json")
+
+
+def _task_excel_path(job_id):
+    _task_json_path(job_id)
+    return os.path.join(SWAP_TASK_DIR, f"换图任务_{job_id}.xlsx")
+
+
+def _read_task(job_id):
+    path = _task_json_path(job_id)
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def _write_task(task):
+    path = _task_json_path(task["job_id"])
+    temp_path = path + ".tmp"
+    task["updated_at"] = _utc_now()
+    with open(temp_path, "w", encoding="utf-8") as file:
+        json.dump(task, file, ensure_ascii=False, indent=2)
+    os.replace(temp_path, path)
+
+
+def _get_product_info(product_id, data):
+    records = [row for row in data.get("records", []) if str(row.get("product_id", "")) == str(product_id)]
+    if not records:
+        return {"store_name": "", "product_code": ""}
+    representative = max(records, key=lambda row: row.get("date", "") or "")
+    return {
+        "store_name": representative.get("store_name", "") or "",
+        "product_code": representative.get("product_code", "") or "",
+    }
+
+
+@app.get("/api/swap-image/products")
+def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
+    """换图工作台商品列表：可按外部日期或日期区间筛选，否则展示最近日期。"""
+    data = load_all_data()
+    grouped = {}
+    for record in data['records']:
+        pid = record.get('product_id', '')
+        if not pid:
+            continue
+        grouped.setdefault(pid, []).append(record)
+
+    rows = []
+    for pid, records in grouped.items():
+        if date:
+            latest = [r for r in records if r.get('date', '') == date]
+        elif date_from or date_to:
+            latest = [
+                r for r in records
+                if (not date_from or r.get('date', '') >= date_from)
+                and (not date_to or r.get('date', '') <= date_to)
+            ]
+        else:
+            latest_date = max((r.get('date', '') for r in records), default='')
+            latest = [r for r in records if r.get('date', '') == latest_date] if latest_date else records
+        if not latest:
+            continue
+        selected_date = max((r.get('date', '') for r in latest), default='')
+        representative = max(
+            latest,
+            key=lambda r: (
+                r.get('image_type') == '主轮播图',
+                r.get('impressions', 0) or 0,
+                r.get('clicks', 0) or 0,
+            ),
+        )
+        impressions = sum(r.get('impressions', 0) or 0 for r in latest)
+        clicks = sum(r.get('clicks', 0) or 0 for r in latest)
+        orders = sum(r.get('order_count', 0) or 0 for r in latest)
+        rows.append({
+            'product_id': pid,
+            'store_name': representative.get('store_name', ''),
+            'brand': representative.get('brand', ''),
+            'product_code': representative.get('product_code', ''),
+            'product_title': representative.get('product_title', ''),
+            'date': selected_date,
+            'image_url': representative.get('image_url', ''),
+            'impressions': impressions,
+            'clicks': clicks,
+            'ctr': round(clicks / impressions, 4) if impressions else 0,
+            'conversion_rate': round(orders / clicks, 4) if clicks else 0,
+            'image_count': len({r.get('image_url') for r in records if r.get('image_url')}),
+        })
+
+    return sorted(rows, key=lambda row: (row['date'], row['impressions']), reverse=True)
 
 
 def _get_product_images(product_id, data):
@@ -230,6 +341,7 @@ def api_swap_preview(payload: dict):
     data = load_all_data()
     source_id = payload.get('source_product_id', '')
     target_ids = payload.get('target_product_ids', [])
+    target_image_urls = payload.get('target_image_urls', {}) or {}
     if not source_id or not target_ids:
         return {"error": "请选择源商品和至少一个目标商品"}
 
@@ -244,19 +356,27 @@ def api_swap_preview(payload: dict):
         target_main, target_other = _get_product_images(tid, data)
         has_data = len(target_main)
         empty_slots = max(0, TOTAL_IMAGE_SLOTS - has_data)
+        available_images = target_main + target_other
+        available_by_url = {img.get('image_url'): img for img in available_images}
+        requested_urls = list(dict.fromkeys(target_image_urls.get(tid, [])))
+        selected_images = [available_by_url[url] for url in requested_urls if url in available_by_url]
         targets.append({
             "product_id": tid,
             "has_data_count": has_data,
             "empty_slots": empty_slots,
             "main_images": target_main,
             "other_images": target_other,
+            "selected_images": selected_images,
+            "selected_count": len(selected_images),
         })
 
     return {
         "source_images": source_images,
         "source_id": source_id,
         "targets": targets,
-        "plan": f"将源商品 {source_id} 的图替换到 {len(targets)} 个目标商品的空图位",
+        "plan": f"将源商品 {source_id} 的图替换到 {len(targets)} 个目标商品的指定图片位",
+        "supports_target_selection": True,
+        "supports_server_queue": True,
     }
 
 
@@ -265,21 +385,43 @@ def api_swap_execute(payload: dict):
     source_id = payload.get('source_product_id', '')
     source_image_urls = payload.get('source_image_urls', [])
     target_ids = payload.get('target_product_ids', [])
+    target_image_urls = payload.get('target_image_urls', {}) or {}
     if not source_id or not target_ids or not source_image_urls:
         return {"success": False, "error": "缺少参数"}
 
     data = load_all_data()
     source_main, source_other = _get_product_images(source_id, data)
     source_all = source_main + source_other
-    source_imgs = [img for img in source_all if img['image_url'] in source_image_urls]
+    source_by_url = {img['image_url']: img for img in source_all}
+    source_image_urls = list(dict.fromkeys(source_image_urls))
+    source_imgs = [source_by_url[url] for url in source_image_urls if url in source_by_url]
     if not source_imgs:
         return {"success": False, "error": "找不到源图片"}
 
-    # 计算每个目标商品的空图位数（有数据的图不碰）
+    source_info = _get_product_info(source_id, data)
+    main_rows = [{
+        "store_name": source_info["store_name"],
+        "product_id": source_id,
+        "image_url": img["image_url"],
+        "product_code": source_info["product_code"],
+        "operator": "",
+    } for img in source_imgs]
+
     targets = []
+    replacement_rows = []
     for tid in target_ids:
         target_main, target_other = _get_product_images(tid, data)
-        # 有数据的轮播图数（有曝光/点击/交易额的才算）
+        available_by_url = {img['image_url']: img for img in target_main + target_other}
+        requested_urls = list(dict.fromkeys(target_image_urls.get(tid, [])))
+        selected_urls = [url for url in requested_urls if url in available_by_url]
+        if not requested_urls:
+            return {"success": False, "error": f"请选择目标商品 {tid} 需要替换的图片"}
+        if requested_urls and not selected_urls:
+            return {"success": False, "error": f"目标商品 {tid} 找不到所选图片"}
+        if len(selected_urls) != len(requested_urls):
+            return {"success": False, "error": f"目标商品 {tid} 的部分所选图片已失效，请重新选择"}
+        if len(selected_urls) > len(source_imgs):
+            return {"success": False, "error": f"目标商品 {tid} 选择了 {len(selected_urls)} 张图片，但源图只有 {len(source_imgs)} 张"}
         data_slots = len([img for img in target_main
                           if (img.get('impressions', 0) or 0) > 0
                           or (img.get('clicks', 0) or 0) > 0
@@ -288,50 +430,147 @@ def api_swap_execute(payload: dict):
         targets.append({
             "product_id": tid,
             "empty_slots": empty_slots,
+            "replace_image_urls": selected_urls,
+            "replace_count": len(selected_urls),
         })
+        target_info = _get_product_info(tid, data)
+        replacement_rows.extend({
+            "store_name": target_info["store_name"],
+            "product_id": tid,
+            "image_url": url,
+            "product_code": target_info["product_code"],
+            "operator": "",
+        } for url in selected_urls)
 
     swap_command = {
         "action": "swap_image",
         "source": {
             "product_id": source_id,
-            "images": [{"image_url": u, "image_type": s.get('image_type', '')}
-                       for u, s in zip(source_image_urls, source_imgs)],
+            "images": [{"image_url": img["image_url"], "image_type": img.get('image_type', '')}
+                       for img in source_imgs],
         },
         "targets": targets,
     }
 
     try:
-        resp = requests.post(f"{RPA_TARGET}/execute", json=swap_command, timeout=10)
-        if resp.status_code == 200:
-            result = resp.json()
-            job_id = result.get("job_id", "")
-            return {
-                "success": True,
-                "job_id": job_id,
-                "status": "started",
-                "message": result.get("message", "已启动"),
-            }
-        else:
-            return {"success": False, "error": f"RPA returned {resp.status_code}: {resp.text[:200]}"}
-    except requests.exceptions.ConnectionError:
-        return {"success": False, "error": f"Cannot connect to {RPA_TARGET}, is listener running?"}
+        job_id = uuid.uuid4().hex[:12]
+        excel_path = _task_excel_path(job_id)
+        build_swap_workbook(main_rows, replacement_rows, excel_path)
+        task = {
+            "job_id": job_id,
+            "status": "queued",
+            "phase": "waiting_listener",
+            "created_at": _utc_now(),
+            "claimed_at": "",
+            "claimed_by": "",
+            "excel_file": os.path.basename(excel_path),
+            "source_count": len(main_rows),
+            "target_count": len(replacement_rows),
+            "command": swap_command,
+        }
+        with SWAP_TASK_LOCK:
+            _write_task(task)
+        return {
+            "success": True,
+            "job_id": job_id,
+            "status": "queued",
+            "message": "任务已提交，等待监听电脑接收 Excel",
+            "excel_file": task["excel_file"],
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
 @app.get("/api/swap-image/status/{job_id}")
 def api_swap_status(job_id: str):
-    """Poll RPA progress"""
+    """Return the server-side queue and Excel receiving progress for a swap task."""
     try:
-        resp = requests.get(f"{RPA_TARGET}/progress/{job_id}", timeout=5)
-        if resp.status_code == 200:
-            return resp.json()
-        elif resp.status_code == 404:
+        task = _read_task(job_id)
+        if not task:
             return {"status": "not_found", "error": "Job not found"}
-        else:
-            return {"status": "error", "error": f"Listener returned {resp.status_code}"}
+        return {key: value for key, value in task.items() if key != "command"}
     except Exception as e:
         return {"status": "error", "error": str(e)}
+
+
+@app.get("/api/swap-tasks/pending")
+def api_swap_task_pending(listener_id: str = Query(default="")):
+    """Claim the oldest queued task. The listener polls this endpoint."""
+    listener_id = (listener_id or "unnamed-listener").strip()[:100]
+    now = datetime.now(timezone.utc)
+    with SWAP_TASK_LOCK:
+        candidates = []
+        for filename in os.listdir(SWAP_TASK_DIR):
+            if not filename.endswith(".json"):
+                continue
+            try:
+                task = _read_task(filename[:-5])
+                if not task:
+                    continue
+                if task.get("status") == "claimed" and task.get("claimed_at"):
+                    claimed_at = datetime.fromisoformat(task["claimed_at"])
+                    if (now - claimed_at).total_seconds() > SWAP_TASK_LEASE_SECONDS:
+                        task["status"] = "queued"
+                        task["phase"] = "listener_lease_expired"
+                        task["claimed_at"] = ""
+                        task["claimed_by"] = ""
+                        _write_task(task)
+                if task.get("status") == "queued":
+                    candidates.append(task)
+            except Exception:
+                continue
+
+        if not candidates:
+            return {"task": None}
+
+        task = min(candidates, key=lambda item: item.get("created_at", ""))
+        task["status"] = "claimed"
+        task["phase"] = "excel_received"
+        task["claimed_at"] = _utc_now()
+        task["claimed_by"] = listener_id
+        _write_task(task)
+
+    return {
+        "task": {
+            "job_id": task["job_id"],
+            "status": task["status"],
+            "excel_file": task["excel_file"],
+            "excel_url": f"/api/swap-tasks/{task['job_id']}/excel",
+            "command": task["command"],
+        }
+    }
+
+
+@app.get("/api/swap-tasks/{job_id}/excel")
+def api_swap_task_excel(job_id: str):
+    task = _read_task(job_id)
+    excel_path = _task_excel_path(job_id)
+    if not task or not os.path.exists(excel_path):
+        return {"error": "Excel file not found"}
+    return FileResponse(
+        excel_path,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=task.get("excel_file") or os.path.basename(excel_path),
+    )
+
+
+@app.post("/api/swap-tasks/{job_id}/status")
+def api_swap_task_status(job_id: str, payload: dict):
+    allowed_statuses = {"claimed", "pending", "running", "done", "failed", "stopped"}
+    with SWAP_TASK_LOCK:
+        task = _read_task(job_id)
+        if not task:
+            return {"success": False, "error": "Job not found"}
+        status = payload.get("status", task.get("status", "claimed"))
+        if status not in allowed_statuses:
+            return {"success": False, "error": "Invalid status"}
+        protected = {"job_id", "command", "excel_file", "created_at"}
+        for key, value in payload.items():
+            if key not in protected:
+                task[key] = value
+        task["status"] = status
+        _write_task(task)
+    return {"success": True, "job_id": job_id, "status": status}
 
 
 if __name__ == '__main__':
