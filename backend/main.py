@@ -18,7 +18,7 @@ from data_loader import (
     load_all_data, get_summary, get_products, get_creatives_by_product,
     get_trends, get_product_aggregates
 )
-from swap_workbook import build_swap_workbook
+from swap_workbook import build_swap_workbook, read_swap_workbook
 
 app = FastAPI(title="测图数据看板 API", version="2.0.0")
 
@@ -55,15 +55,15 @@ def api_products():
 
 
 @app.get("/api/products/aggregates")
-def api_product_aggregates():
+def api_product_aggregates(date: str = Query(None), date_from: str = Query(None), date_to: str = Query(None)):
     data = load_all_data()
-    return get_product_aggregates(data)
+    return get_product_aggregates(data, date=date, date_from=date_from, date_to=date_to)
 
 
 @app.get("/api/creatives")
-def api_creatives(product_id: str = Query(...), date: str = Query(None)):
+def api_creatives(product_id: str = Query(...), date: str = Query(None), include_empty: bool = Query(False)):
     """某商品的所有创意明细（含推广创意URL、图片类型等新字段），可选日期筛选"""
-    data = load_all_data()
+    data = load_all_data(include_empty=include_empty)
     creatives = get_creatives_by_product(product_id, data)
     if date:
         creatives = [c for c in creatives if c.get('date') == date]
@@ -73,7 +73,10 @@ def api_creatives(product_id: str = Query(...), date: str = Query(None)):
 
     # 该商品有数据的日期列表
     all_creatives = get_creatives_by_product(product_id, data)
+    # 换图工作台请求 include_empty=true 时，日期下拉也必须包含只有 0 指标的日期；
+    # 否则用户虽然能拿到图片记录，却无法通过日期筛选定位到它们。
     available_dates = sorted(set(c.get('date') for c in all_creatives if c.get('date') and (
+        include_empty or
         (c.get('impressions', 0) or 0) > 0 or (c.get('transaction_amount', 0) or 0) > 0
     )))
 
@@ -202,6 +205,7 @@ SWAP_TASK_DIR = os.path.abspath(os.getenv(
 ))
 SWAP_TASK_LEASE_SECONDS = int(os.getenv("SWAP_TASK_LEASE_SECONDS", "180"))
 SWAP_TASK_LOCK = threading.Lock()
+FIXED_SWAP_EXCEL_NAME = "换图任务.xlsx"
 os.makedirs(SWAP_TASK_DIR, exist_ok=True)
 
 
@@ -216,8 +220,17 @@ def _task_json_path(job_id):
 
 
 def _task_excel_path(job_id):
+    """Keep the fixed Excel filename isolated inside its task directory."""
     _task_json_path(job_id)
-    return os.path.join(SWAP_TASK_DIR, f"换图任务_{job_id}.xlsx")
+    return os.path.join(SWAP_TASK_DIR, job_id, FIXED_SWAP_EXCEL_NAME)
+
+
+def _legacy_task_excel_path(excel_file):
+    """Resolve files created before per-task directories were introduced."""
+    safe_name = os.path.basename(str(excel_file or ""))
+    if safe_name != str(excel_file or "") or not re.fullmatch(r"换图任务_[A-Za-z0-9_-]+\.xlsx", safe_name):
+        return ""
+    return os.path.join(SWAP_TASK_DIR, safe_name)
 
 
 def _read_task(job_id):
@@ -251,7 +264,7 @@ def _get_product_info(product_id, data):
 @app.get("/api/swap-image/products")
 def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
     """换图工作台商品列表：可按外部日期或日期区间筛选，否则展示最近日期。"""
-    data = load_all_data()
+    data = load_all_data(include_empty=True)
     grouped = {}
     for record in data['records']:
         pid = record.get('product_id', '')
@@ -306,39 +319,74 @@ def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
 
 def _get_product_images(product_id, data):
     creatives = get_creatives_by_product(product_id, data)
-    # 先按净交易额排序，确保去重时保留数据最好的那条
-    creatives.sort(key=lambda x: (x.get('net_transaction', 0) or 0), reverse=True)
-    main_images = []
-    other_images = []
-    seen_urls = set()
+    # 同一个链接可能有多天记录。先按图片地址聚合，保留指标为 0 的图片，
+    # 再按“1 张主图 + 9 张轮播图”的商品图片位顺序截取，避免按日期重复显示。
+    by_url = {}
     for c in creatives:
-        url = c.get('image_url', '')
-        if not url or url in seen_urls:
+        url = str(c.get('image_url', '') or '').strip()
+        if not url:
             continue
-        seen_urls.add(url)
-        img = {
-            "image_url": url,
-            "image_type": c.get('image_type', ''),
-            "status": c.get('status', ''),
-            "net_transaction": c.get('net_transaction', 0) or 0,
-            "impressions": c.get('impressions', 0) or 0,
-            "clicks": c.get('clicks', 0) or 0,
-            "ctr": c.get('ctr', 0) or 0,
-            "transaction_amount": c.get('transaction_amount', 0) or 0,
-            "order_count": c.get('order_count', 0) or 0,
-        }
-        if c.get('image_type', '') in SLOT_IMAGE_TYPES:
-            main_images.append(img)
-        else:
-            other_images.append(img)
-    main_images.sort(key=lambda x: x['net_transaction'], reverse=True)
-    other_images.sort(key=lambda x: x['net_transaction'], reverse=True)
-    return main_images, other_images
+        score = (
+            c.get('net_transaction', 0) or 0,
+            c.get('impressions', 0) or 0,
+            c.get('clicks', 0) or 0,
+            c.get('order_count', 0) or 0,
+        )
+        current = by_url.get(url)
+        if current is None:
+            current = {
+                "image_url": url,
+                "image_type": c.get('image_type', '') or '',
+                "status": c.get('status', '') or '',
+                "net_transaction": 0,
+                "impressions": 0,
+                "clicks": 0,
+                "ctr": 0,
+                "transaction_amount": 0,
+                "order_count": 0,
+                "_best_score": score,
+            }
+            by_url[url] = current
+        current['net_transaction'] += c.get('net_transaction', 0) or 0
+        current['impressions'] += c.get('impressions', 0) or 0
+        current['clicks'] += c.get('clicks', 0) or 0
+        current['transaction_amount'] += c.get('transaction_amount', 0) or 0
+        current['order_count'] += c.get('order_count', 0) or 0
+        if score > current['_best_score']:
+            current['_best_score'] = score
+            current['image_type'] = c.get('image_type', '') or current['image_type']
+            current['status'] = c.get('status', '') or current['status']
+        current['ctr'] = current['clicks'] / current['impressions'] if current['impressions'] else 0
+
+    images = list(by_url.values())
+    for image in images:
+        image.pop('_best_score', None)
+    rank = lambda image: (
+        image.get('net_transaction', 0),
+        image.get('impressions', 0),
+        image.get('clicks', 0),
+    )
+    main_types = {'主图', '主轮播图'}
+    carousel_types = {'轮播图', '副轮播图'}
+    primary = sorted((img for img in images if img.get('image_type') in main_types), key=rank, reverse=True)
+    carousel = sorted((img for img in images if img.get('image_type') in carousel_types), key=rank, reverse=True)
+    selected = []
+    if primary:
+        selected.append(primary[0])
+    selected.extend(carousel[:9])
+    # 数据源偶尔没有图片类型标记，或轮播图不足 9 张；用剩余唯一图片补足展示位。
+    selected_urls = {img['image_url'] for img in selected}
+    remaining = sorted((img for img in images if img['image_url'] not in selected_urls), key=rank, reverse=True)
+    selected.extend(remaining[:max(0, TOTAL_IMAGE_SLOTS - len(selected))])
+    selected = selected[:TOTAL_IMAGE_SLOTS]
+    selected_urls = {img['image_url'] for img in selected}
+    other_images = [img for img in images if img['image_url'] not in selected_urls]
+    return selected, other_images
 
 
 @app.post("/api/swap-image/preview")
 def api_swap_preview(payload: dict):
-    data = load_all_data()
+    data = load_all_data(include_empty=True)
     source_id = payload.get('source_product_id', '')
     target_ids = payload.get('target_product_ids', [])
     target_image_urls = payload.get('target_image_urls', {}) or {}
@@ -346,8 +394,9 @@ def api_swap_preview(payload: dict):
         return {"error": "请选择源商品和至少一个目标商品"}
 
     source_main, source_other = _get_product_images(source_id, data)
-    source_display_types = {'主轮播图', '副轮播图', '创意图'}
-    source_images = [img for img in source_main + source_other if img.get('image_type', '') in source_display_types]
+    # _get_product_images 已经完成“1 主图 + 9 轮播图”的唯一图片位筛选，
+    # 不再按是否有指标或类型标签过滤，确保空数据图片也能被选择。
+    source_images = source_main
     if not source_images:
         return {"error": f"找不到源商品 {source_id} 的创意数据"}
 
@@ -386,10 +435,11 @@ def api_swap_execute(payload: dict):
     source_image_urls = payload.get('source_image_urls', [])
     target_ids = payload.get('target_product_ids', [])
     target_image_urls = payload.get('target_image_urls', {}) or {}
+    operator = str(payload.get('operator', '') or '').strip()[:100]
     if not source_id or not target_ids or not source_image_urls:
         return {"success": False, "error": "缺少参数"}
 
-    data = load_all_data()
+    data = load_all_data(include_empty=True)
     source_main, source_other = _get_product_images(source_id, data)
     source_all = source_main + source_other
     source_by_url = {img['image_url']: img for img in source_all}
@@ -404,7 +454,7 @@ def api_swap_execute(payload: dict):
         "product_id": source_id,
         "image_url": img["image_url"],
         "product_code": source_info["product_code"],
-        "operator": "",
+        "operator": operator,
     } for img in source_imgs]
 
     targets = []
@@ -439,11 +489,12 @@ def api_swap_execute(payload: dict):
             "product_id": tid,
             "image_url": url,
             "product_code": target_info["product_code"],
-            "operator": "",
+            "operator": operator,
         } for url in selected_urls)
 
     swap_command = {
         "action": "swap_image",
+        "operator": operator,
         "source": {
             "product_id": source_id,
             "images": [{"image_url": img["image_url"], "image_type": img.get('image_type', '')}
@@ -454,21 +505,27 @@ def api_swap_execute(payload: dict):
 
     try:
         job_id = uuid.uuid4().hex[:12]
-        excel_path = _task_excel_path(job_id)
-        build_swap_workbook(main_rows, replacement_rows, excel_path)
-        task = {
-            "job_id": job_id,
-            "status": "queued",
-            "phase": "waiting_listener",
-            "created_at": _utc_now(),
-            "claimed_at": "",
-            "claimed_by": "",
-            "excel_file": os.path.basename(excel_path),
-            "source_count": len(main_rows),
-            "target_count": len(replacement_rows),
-            "command": swap_command,
-        }
         with SWAP_TASK_LOCK:
+            excel_path = _task_excel_path(job_id)
+            os.makedirs(os.path.dirname(excel_path), exist_ok=True)
+            build_swap_workbook(main_rows, replacement_rows, excel_path)
+            task = {
+                "job_id": job_id,
+                "status": "queued",
+                "phase": "waiting_listener",
+                "created_at": _utc_now(),
+                "claimed_at": "",
+                "claimed_by": "",
+                "excel_file": FIXED_SWAP_EXCEL_NAME,
+                "operator": operator,
+                "source_count": len(main_rows),
+                "target_count": len(replacement_rows),
+                "workbook_rows": {
+                    "主图数据": main_rows,
+                    "替换数据": replacement_rows,
+                },
+                "command": swap_command,
+            }
             _write_task(task)
         return {
             "success": True,
@@ -525,7 +582,7 @@ def api_swap_task_pending(listener_id: str = Query(default="")):
 
         task = min(candidates, key=lambda item: item.get("created_at", ""))
         task["status"] = "claimed"
-        task["phase"] = "excel_received"
+        task["phase"] = "claimed_by_listener"
         task["claimed_at"] = _utc_now()
         task["claimed_by"] = listener_id
         _write_task(task)
@@ -536,21 +593,127 @@ def api_swap_task_pending(listener_id: str = Query(default="")):
             "status": task["status"],
             "excel_file": task["excel_file"],
             "excel_url": f"/api/swap-tasks/{task['job_id']}/excel",
+            "operator": task.get("operator", ""),
+            "created_at": task.get("created_at", ""),
             "command": task["command"],
         }
     }
 
 
+@app.get("/api/swap-tasks/records")
+def api_swap_task_records(limit: int = Query(default=500, ge=1, le=2000)):
+    """Return task audit records for the submitter-computer MySQL recorder."""
+    records = []
+    with SWAP_TASK_LOCK:
+        for filename in os.listdir(SWAP_TASK_DIR):
+            if not filename.endswith(".json"):
+                continue
+            try:
+                task = _read_task(filename[:-5])
+                if task:
+                    if not task.get("workbook_rows"):
+                        excel_path = _task_excel_path(task["job_id"])
+                        if not os.path.exists(excel_path):
+                            excel_path = _legacy_task_excel_path(task.get("excel_file", ""))
+                        if excel_path and os.path.exists(excel_path):
+                            task["workbook_rows"] = read_swap_workbook(excel_path)
+                            if "operator" not in task:
+                                all_rows = sum(task["workbook_rows"].values(), [])
+                                task["operator"] = next(
+                                    (row.get("operator", "") for row in all_rows
+                                     if row.get("operator")),
+                                    "",
+                                )
+                            _write_task(task)
+                    records.append(task)
+            except Exception:
+                continue
+    records.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    return {"records": records[:limit], "count": min(len(records), limit)}
+
+
+@app.get("/api/swap-tasks/queue")
+def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
+    """Return compact queue items for the swap workspace."""
+    tasks = []
+    with SWAP_TASK_LOCK:
+        for filename in os.listdir(SWAP_TASK_DIR):
+            if not filename.endswith(".json"):
+                continue
+            try:
+                task = _read_task(filename[:-5])
+                if task:
+                    tasks.append(task)
+            except Exception:
+                continue
+
+    queued = sorted(
+        (task for task in tasks if task.get("status") in {"queued", "pending"}),
+        key=lambda item: item.get("created_at", ""),
+    )
+    queue_positions = {
+        task["job_id"]: index for index, task in enumerate(queued, start=1)
+    }
+    tasks.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    items = []
+    for task in tasks[:limit]:
+        command = task.get("command") or {}
+        source = command.get("source") or {}
+        targets = command.get("targets") or []
+        status = task.get("status", "queued")
+        items.append({
+            "job_id": task["job_id"],
+            "status": status,
+            "phase": task.get("phase", ""),
+            "created_at": task.get("created_at", ""),
+            "updated_at": task.get("updated_at", ""),
+            "claimed_by": task.get("claimed_by", ""),
+            "source_product_id": source.get("product_id", ""),
+            "source_count": task.get("source_count", 0),
+            "target_count": len(targets),
+            "target_product_ids": [
+                str(target.get("product_id", "")) for target in targets
+            ],
+            "queue_position": queue_positions.get(task["job_id"]),
+            "cancelable": status in {"queued", "pending"},
+            "error": task.get("error", ""),
+        })
+    return {"tasks": items, "queued_count": len(queued)}
+
+
+@app.post("/api/swap-tasks/{job_id}/cancel")
+def api_swap_task_cancel(job_id: str):
+    """Cancel a task only while it is still waiting in the queue."""
+    with SWAP_TASK_LOCK:
+        task = _read_task(job_id)
+        if not task:
+            return {"success": False, "error": "任务不存在"}
+        current_status = task.get("status", "queued")
+        if current_status not in {"queued", "pending"}:
+            return {
+                "success": False,
+                "error": "任务已被接收或已结束，无法取消",
+                "status": current_status,
+            }
+        task["status"] = "stopped"
+        task["phase"] = "cancelled_by_user"
+        task["cancelled_at"] = _utc_now()
+        _write_task(task)
+    return {"success": True, "job_id": job_id, "status": "stopped"}
+
+
 @app.get("/api/swap-tasks/{job_id}/excel")
 def api_swap_task_excel(job_id: str):
     task = _read_task(job_id)
-    excel_path = _task_excel_path(job_id)
+    excel_path = _task_excel_path(job_id) if task else ""
+    if task and not os.path.exists(excel_path):
+        excel_path = _legacy_task_excel_path(task.get("excel_file", ""))
     if not task or not os.path.exists(excel_path):
         return {"error": "Excel file not found"}
     return FileResponse(
         excel_path,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        filename=task.get("excel_file") or os.path.basename(excel_path),
+        filename=FIXED_SWAP_EXCEL_NAME,
     )
 
 
@@ -564,7 +727,10 @@ def api_swap_task_status(job_id: str, payload: dict):
         status = payload.get("status", task.get("status", "claimed"))
         if status not in allowed_statuses:
             return {"success": False, "error": "Invalid status"}
-        protected = {"job_id", "command", "excel_file", "created_at"}
+        protected = {
+            "job_id", "command", "excel_file", "created_at", "workbook_rows",
+            "operator", "source_count", "target_count",
+        }
         for key, value in payload.items():
             if key not in protected:
                 task[key] = value

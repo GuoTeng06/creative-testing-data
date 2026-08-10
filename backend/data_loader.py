@@ -84,14 +84,19 @@ def _parse_row(row_dict):
 # ---- 缓存 ----
 _cache = None
 _cache_time = 0
+_empty_cache = None
+_empty_cache_time = 0
 CACHE_TTL = 300
 
 
-def load_all_data(force=False):
-    global _cache, _cache_time
+def load_all_data(force=False, include_empty=False):
+    """Load dashboard rows; swap workbench can opt into image rows with zero metrics."""
+    global _cache, _cache_time, _empty_cache, _empty_cache_time
+    cache = _empty_cache if include_empty else _cache
+    cache_time = _empty_cache_time if include_empty else _cache_time
     now = time.time()
-    if not force and _cache is not None and (now - _cache_time) < CACHE_TTL:
-        return _cache
+    if not force and cache is not None and (now - cache_time) < CACHE_TTL:
+        return cache
 
     conn = _get_conn()
     cur = conn.cursor()
@@ -107,8 +112,9 @@ def load_all_data(force=False):
         row_dict = dict(zip(columns, row))
         rec = _parse_row(row_dict)
 
-        # 跳过完全无数据的行
-        if rec['impressions'] == 0 and rec['transaction_amount'] == 0 and rec['clicks'] == 0:
+        # 概览等核心指标继续忽略空行；换图工作台必须保留有图片地址的空指标图片。
+        if (not include_empty and
+                rec['impressions'] == 0 and rec['transaction_amount'] == 0 and rec['clicks'] == 0):
             continue
 
         pid = rec['product_id']
@@ -135,8 +141,12 @@ def load_all_data(force=False):
         'dates': sorted(date_range),
         'total_creatives': len(all_records),
     }
-    _cache = result
-    _cache_time = now
+    if include_empty:
+        _empty_cache = result
+        _empty_cache_time = now
+    else:
+        _cache = result
+        _cache_time = now
 
     print(f"[DataLoader] MySQL → {len(all_records)} rows, {len(products)} products, "
           f"{len(stores)} stores, {len(date_range)} dates")
@@ -161,7 +171,8 @@ def get_summary(data=None, date_from=None, date_to=None, store=None):
     all_records = data['records']
     
     if store:
-        all_records = [r for r in all_records if r.get('store_name', '') == store]
+        stores = {s.strip() for s in str(store).split(',') if s.strip()}
+        all_records = [r for r in all_records if r.get('store_name', '') in stores]
     if date_from:
         all_records = [r for r in all_records if r.get('date', '') >= date_from]
     if date_to:
@@ -223,12 +234,22 @@ def get_trends(product_id=None, metric='transaction_amount', data=None, date_fro
             for d, v in sorted(by_date.items())]
 
 
-def get_product_aggregates(data=None):
+def get_product_aggregates(data=None, date=None, date_from=None, date_to=None):
     if data is None:
         data = load_all_data()
 
+    # Keep the product list unique while allowing the UI to scope metrics to a date.
+    records = data['records']
+    if date:
+        records = [r for r in records if r.get('date', '') == date]
+    else:
+        if date_from:
+            records = [r for r in records if r.get('date', '') >= date_from]
+        if date_to:
+            records = [r for r in records if r.get('date', '') <= date_to]
+
     products = {}
-    for r in data['records']:
+    for r in records:
         pid = r.get('product_id', 'unknown')
         if pid not in products:
             products[pid] = {
@@ -236,6 +257,8 @@ def get_product_aggregates(data=None):
                 'product_title': r.get('product_title', ''),
                 'product_code': r.get('product_code', ''),
                 'store_name': r.get('store_name', ''),
+                'brand': r.get('brand', ''),
+                'main_image_url': '',
                 'total_impressions': 0,
                 'total_clicks': 0,
                 'total_transaction': 0,
@@ -245,11 +268,15 @@ def get_product_aggregates(data=None):
                 'dates': set(),
             }
         p = products[pid]
+        if not p['brand'] and r.get('brand'):
+            p['brand'] = r.get('brand', '')
         p['total_impressions'] += r.get('impressions', 0) or 0
         p['total_clicks'] += r.get('clicks', 0) or 0
         p['total_transaction'] += r.get('transaction_amount', 0) or 0
         p['total_orders'] += r.get('order_count', 0) or 0
         p['creative_count'] += 1
+        if r.get('image_url') and (not p['main_image_url'] or '主' in (r.get('image_type') or '')):
+            p['main_image_url'] = r.get('image_url')
         if r.get('image_type'):
             p['image_types'].add(r['image_type'])
         if r.get('date'):
@@ -262,6 +289,8 @@ def get_product_aggregates(data=None):
             'product_title': p['product_title'],
             'product_code': p['product_code'],
             'store_name': p['store_name'],
+            'brand': p['brand'],
+            'main_image_url': p['main_image_url'],
             'total_impressions': p['total_impressions'],
             'total_clicks': p['total_clicks'],
             'total_transaction': round(p['total_transaction'], 2),
@@ -271,6 +300,8 @@ def get_product_aggregates(data=None):
             'ctr': round(p['total_clicks'] / p['total_impressions'], 4) if p['total_impressions'] > 0 else 0,
             'conversion_rate': round(p['total_orders'] / p['total_clicks'], 4) if p['total_clicks'] > 0 else 0,
             'date_count': len(p['dates']),
+            'date_min': min(p['dates']) if p['dates'] else '',
+            'date_max': max(p['dates']) if p['dates'] else '',
         })
 
     return sorted(result, key=lambda x: x['total_transaction'], reverse=True)
