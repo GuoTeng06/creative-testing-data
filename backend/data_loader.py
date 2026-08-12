@@ -55,17 +55,26 @@ def _parse_percent(val):
 def _parse_row(row_dict):
     def num(key):
         return _parse_number(row_dict.get(key))
+    def text(key):
+        value = row_dict.get(key)
+        return '' if value is None else str(value).strip()
+    metric_keys = ('曝光量', '点击量', '交易额(元)', '成交笔数')
+    metrics_empty = all(
+        row_dict.get(key) is None or str(row_dict.get(key)).strip() in {'', '-'}
+        for key in metric_keys
+    )
     
     return {
-        'store_name': str(row_dict.get('店铺名称', '')),
-        'product_id': str(row_dict.get('商品ID', '')),
-        'date': str(row_dict.get('日期', '')),
-        'product_title': str(row_dict.get('商品标题', '')),
-        'brand': str(row_dict.get('品牌', '')),
-        'product_code': str(row_dict.get('商品编码', '')),
-        'image_url': str(row_dict.get('推广创意', '')),
-        'image_type': str(row_dict.get('图片类型', '')),
-        'status': str(row_dict.get('审核状态', '')),
+        'store_name': text('店铺名称'),
+        'product_id': text('商品ID'),
+        'date': text('日期'),
+        'product_title': text('商品标题'),
+        'brand': text('品牌'),
+        'product_code': text('商品编码'),
+        'image_url': text('推广创意'),
+        'image_type': text('图片类型'),
+        'status': text('审核状态'),
+        'metrics_empty': metrics_empty,
         'transaction_amount': num('交易额(元)'),
         'order_count': int(num('成交笔数')),
         'avg_order_amount': num('每笔成交金额(元)'),
@@ -164,7 +173,7 @@ def get_creatives_by_product(product_id, data=None):
         data = load_all_data()
     return [r for r in data['records'] if r.get('product_id') == product_id]
 
-def get_summary(data=None, date_from=None, date_to=None, store=None):
+def get_summary(data=None, date_from=None, date_to=None, store=None, brand=None):
     """概览统计，支持日期范围 + 店铺筛选"""
     if data is None:
         data = load_all_data()
@@ -173,6 +182,9 @@ def get_summary(data=None, date_from=None, date_to=None, store=None):
     if store:
         stores = {s.strip() for s in str(store).split(',') if s.strip()}
         all_records = [r for r in all_records if r.get('store_name', '') in stores]
+    if brand:
+        brands = {b.strip() for b in str(brand).split(',') if b.strip()}
+        all_records = [r for r in all_records if (r.get('brand') or '未标注品牌') in brands]
     if date_from:
         all_records = [r for r in all_records if r.get('date', '') >= date_from]
     if date_to:
@@ -208,6 +220,133 @@ def get_summary(data=None, date_from=None, date_to=None, store=None):
         'overall_ctr': round(total_clicks / total_impressions, 4) if total_impressions > 0 else 0,
         'overall_conversion': round(total_orders / total_clicks, 4) if total_clicks > 0 else 0,
     }
+
+
+def get_store_aggregates(data=None, date_from=None, date_to=None, store=None, brand=None):
+    """按店铺汇总概览指标，复用概览页的日期与店铺筛选规则。"""
+    if data is None:
+        data = load_all_data()
+    records = data['records']
+    if store:
+        stores = {s.strip() for s in str(store).split(',') if s.strip()}
+        records = [r for r in records if r.get('store_name', '') in stores]
+    if brand:
+        brands = {b.strip() for b in str(brand).split(',') if b.strip()}
+        records = [r for r in records if (r.get('brand') or '未标注品牌') in brands]
+    if date_from:
+        records = [r for r in records if r.get('date', '') >= date_from]
+    if date_to:
+        records = [r for r in records if r.get('date', '') <= date_to]
+
+    grouped = {}
+    for record in records:
+        name = record.get('store_name') or '未命名店铺'
+        if name not in grouped:
+            grouped[name] = {
+                'store_name': name,
+                'total_impressions': 0,
+                'total_clicks': 0,
+                'total_transaction': 0,
+                'total_orders': 0,
+                'creative_count': 0,
+                'product_ids': set(),
+            }
+        item = grouped[name]
+        item['total_impressions'] += record.get('impressions', 0) or 0
+        item['total_clicks'] += record.get('clicks', 0) or 0
+        item['total_transaction'] += record.get('transaction_amount', 0) or 0
+        item['total_orders'] += record.get('order_count', 0) or 0
+        item['creative_count'] += 1
+        if record.get('product_id'):
+            item['product_ids'].add(record['product_id'])
+
+    result = []
+    for item in grouped.values():
+        impressions = item['total_impressions']
+        clicks = item['total_clicks']
+        result.append({
+            'store_name': item['store_name'],
+            'total_impressions': item['total_impressions'],
+            'total_clicks': item['total_clicks'],
+            'total_transaction': round(item['total_transaction'], 2),
+            'total_orders': item['total_orders'],
+            'creative_count': item['creative_count'],
+            'product_count': len(item['product_ids']),
+            'ctr': round(clicks / impressions, 4) if impressions > 0 else 0,
+            'conversion_rate': round(item['total_orders'] / clicks, 4) if clicks > 0 else 0,
+        })
+    return sorted(result, key=lambda item: item['total_impressions'], reverse=True)
+
+
+def get_brand_trends(data=None, metric='impressions', date_from=None, date_to=None, store=None, brand=None):
+    """按品牌和日期聚合核心指标，供概览页的品牌趋势钻取使用。"""
+    if data is None:
+        data = load_all_data()
+    records = data['records']
+    if date_from:
+        records = [r for r in records if r.get('date', '') >= date_from]
+    if date_to:
+        records = [r for r in records if r.get('date', '') <= date_to]
+    if store:
+        stores = {s.strip() for s in str(store).split(',') if s.strip()}
+        records = [r for r in records if r.get('store_name', '') in stores]
+    if brand:
+        brands = {b.strip() for b in str(brand).split(',') if b.strip()}
+        records = [r for r in records if (r.get('brand') or '未标注品牌') in brands]
+
+    grouped = defaultdict(lambda: {
+        'impressions': 0, 'clicks': 0, 'orders': 0, 'transaction': 0,
+    })
+    totals = defaultdict(lambda: {
+        'impressions': 0, 'clicks': 0, 'orders': 0, 'transaction': 0,
+    })
+    dates = set()
+    for record in records:
+        date_value = record.get('date')
+        if not date_value:
+            continue
+        brand_value = record.get('brand') or '未标注品牌'
+        values = {
+            'impressions': record.get('impressions', 0) or 0,
+            'clicks': record.get('clicks', 0) or 0,
+            'orders': record.get('order_count', 0) or 0,
+            'transaction': record.get('transaction_amount', 0) or 0,
+        }
+        dates.add(date_value)
+        for key, value in values.items():
+            grouped[(brand_value, date_value)][key] += value
+            totals[brand_value][key] += value
+
+    def metric_value(values):
+        if metric == 'ctr':
+            return values['clicks'] / values['impressions'] if values['impressions'] else 0
+        if metric == 'cvr':
+            return values['orders'] / values['clicks'] if values['clicks'] else 0
+        return values.get(metric, 0)
+
+    ordered_dates = sorted(dates)
+    ordered_brands = sorted(totals, key=lambda name: metric_value(totals[name]), reverse=True)
+    if not brand:
+        ordered_brands = ordered_brands[:8]
+    series = []
+    for brand_value in ordered_brands:
+        points = []
+        for date_value in ordered_dates:
+            values = grouped[(brand_value, date_value)]
+            points.append({
+                'date': date_value,
+                'value': round(metric_value(values), 4 if metric in {'ctr', 'cvr'} else 2),
+                'impressions': values['impressions'],
+                'clicks': values['clicks'],
+                'orders': values['orders'],
+                'transaction': round(values['transaction'], 2),
+            })
+        series.append({
+            'brand': brand_value,
+            'total': round(metric_value(totals[brand_value]), 4 if metric in {'ctr', 'cvr'} else 2),
+            'points': points,
+        })
+    return {'metric': metric, 'dates': ordered_dates, 'series': series}
 
 
 def get_trends(product_id=None, metric='transaction_amount', data=None, date_from=None, date_to=None):

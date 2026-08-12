@@ -6,6 +6,7 @@ import sys
 import os
 import json
 import re
+import random
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -16,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from data_loader import (
     load_all_data, get_summary, get_products, get_creatives_by_product,
-    get_trends, get_product_aggregates
+    get_trends, get_product_aggregates, get_store_aggregates, get_brand_trends
 )
 from swap_workbook import build_swap_workbook, read_swap_workbook
 
@@ -43,9 +44,15 @@ def serve_frontend():
 
 
 @app.get("/api/summary")
-def api_summary(date_from: str = Query(None), date_to: str = Query(None), store: str = Query(None)):
-    data = load_all_data()
-    return get_summary(data, date_from=date_from, date_to=date_to, store=store)
+def api_summary(
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    data = load_all_data(include_empty=include_empty)
+    return get_summary(data, date_from=date_from, date_to=date_to, store=store, brand=brand)
 
 
 @app.get("/api/products")
@@ -55,24 +62,76 @@ def api_products():
 
 
 @app.get("/api/products/aggregates")
-def api_product_aggregates(date: str = Query(None), date_from: str = Query(None), date_to: str = Query(None)):
-    data = load_all_data()
+def api_product_aggregates(
+    date: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    data = load_all_data(include_empty=include_empty)
     return get_product_aggregates(data, date=date, date_from=date_from, date_to=date_to)
 
 
 @app.get("/api/creatives")
-def api_creatives(product_id: str = Query(...), date: str = Query(None), include_empty: bool = Query(False)):
-    """某商品的所有创意明细（含推广创意URL、图片类型等新字段），可选日期筛选"""
+def api_creatives(
+    product_id: str = Query(...),
+    date: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    """某商品的所有创意明细，支持单日或日期范围筛选。"""
     data = load_all_data(include_empty=include_empty)
-    creatives = get_creatives_by_product(product_id, data)
-    if date:
-        creatives = [c for c in creatives if c.get('date') == date]
+    all_creatives = get_creatives_by_product(product_id, data)
+    creatives = all_creatives
+    if date or date_from or date_to:
+        if date:
+            date_from = date_to = date
+        creatives = [
+            c for c in all_creatives
+            if (not date_from or c.get('date', '') >= date_from)
+            and (not date_to or c.get('date', '') <= date_to)
+        ]
+        if include_empty:
+            # 日期范围只改变指标口径，不改变商品的完整图片集合。若某张图在所选
+            # 范围没有记录，补一条 0 指标记录，方便运营仍能看到并识别该图位。
+            dated_urls = {str(c.get('image_url', '') or '').strip() for c in creatives}
+            representatives = {}
+            for c in all_creatives:
+                image_url = str(c.get('image_url', '') or '').strip()
+                if not image_url:
+                    continue
+                current = representatives.get(image_url)
+                score = (
+                    c.get('impressions', 0) or 0,
+                    c.get('clicks', 0) or 0,
+                    c.get('transaction_amount', 0) or 0,
+                )
+                if current is None or score > current[0]:
+                    representatives[image_url] = (score, c)
+            for image_url, (_, representative) in representatives.items():
+                if image_url in dated_urls:
+                    continue
+                empty_row = dict(representative)
+                empty_row.update({
+                    'date': date_to or date_from or '',
+                    'metrics_empty': True,
+                    'impressions': 0,
+                    'clicks': 0,
+                    'ctr': 0,
+                    'conversion_rate': 0,
+                    'transaction_amount': 0,
+                    'order_count': 0,
+                    'avg_order_amount': 0,
+                    'net_transaction': 0,
+                    'net_order_count': 0,
+                })
+                creatives.append(empty_row)
     creatives.sort(key=lambda x: x.get('impressions', 0) or 0, reverse=True)
 
     product_info = next((p for p in data['products'] if p['product_id'] == product_id), {})
 
     # 该商品有数据的日期列表
-    all_creatives = get_creatives_by_product(product_id, data)
     # 换图工作台请求 include_empty=true 时，日期下拉也必须包含只有 0 指标的日期；
     # 否则用户虽然能拿到图片记录，却无法通过日期筛选定位到它们。
     available_dates = sorted(set(c.get('date') for c in all_creatives if c.get('date') and (
@@ -87,12 +146,14 @@ def api_creatives(product_id: str = Query(...), date: str = Query(None), include
             'image_url': c.get('image_url', ''),
             'image_type': c.get('image_type', ''),
             'status': c.get('status', ''),
+            'metrics_empty': bool(c.get('metrics_empty', False)),
             'impressions': c.get('impressions', 0) or 0,
             'clicks': c.get('clicks', 0) or 0,
             'ctr': round(c.get('ctr', 0) or 0, 4),
             'conversion_rate': round(c.get('conversion_rate', 0) or 0, 4),
             'transaction_amount': c.get('transaction_amount', 0) or 0,
             'order_count': c.get('order_count', 0) or 0,
+            'avg_order_amount': c.get('avg_order_amount', 0) or 0,
             'net_transaction': c.get('net_transaction', 0) or 0,
             'net_order_count': c.get('net_order_count', 0) or 0,
             'date': c.get('date', ''),
@@ -187,6 +248,40 @@ def api_stores():
         s = r.get('store_name', '未知')
         store_counts[s] = store_counts.get(s, 0) + 1
     return [{'name': k, 'creative_count': v} for k, v in sorted(store_counts.items())]
+
+
+@app.get("/api/stores/aggregates")
+def api_store_aggregates(
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    """按店铺返回概览指标，供 KPI 卡片的明细弹窗使用。"""
+    data = load_all_data(include_empty=include_empty)
+    return get_store_aggregates(data, date_from=date_from, date_to=date_to, store=store, brand=brand)
+
+
+@app.get("/api/brands/trends")
+def api_brand_trends(
+    metric: str = Query('impressions'),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    """按品牌返回每日核心指标趋势。"""
+    data = load_all_data(include_empty=include_empty)
+    return get_brand_trends(
+        data,
+        metric=metric,
+        date_from=date_from,
+        date_to=date_to,
+        store=store,
+        brand=brand,
+    )
 
 
 @app.get("/api/dates")
@@ -426,6 +521,107 @@ def api_swap_preview(payload: dict):
         "plan": f"将源商品 {source_id} 的图替换到 {len(targets)} 个目标商品的指定图片位",
         "supports_target_selection": True,
         "supports_server_queue": True,
+    }
+
+
+@app.post("/api/swap-image/auto-plan")
+def api_swap_auto_plan(payload: dict):
+    """Build a one-click swap plan for the same product code.
+
+    The source selection determines the image types and counts. Target links
+    are limited to other products with the same code and zero impressions on
+    the matching image type. Carousel candidates are shuffled deterministically
+    so repeated previews do not unexpectedly change the plan.
+    """
+    data = load_all_data(include_empty=True)
+    source_id = str(payload.get('source_product_id', '') or '')
+    source_urls = list(dict.fromkeys(str(url).strip() for url in (payload.get('source_image_urls') or []) if str(url).strip()))
+    if not source_id or not source_urls:
+        return {"success": False, "error": "请先选择源商品和源图片"}
+    source_records = [row for row in data.get('records', []) if str(row.get('product_id', '')) == source_id]
+    source_info = _get_product_info(source_id, data)
+    if not source_records:
+        return {"success": False, "error": f"找不到源商品 {source_id}"}
+    source_code = source_info.get('product_code', '') or next((row.get('product_code', '') for row in source_records if row.get('product_code')), '')
+    if not source_code:
+        return {"success": False, "error": "源商品没有商品编码，无法按编码匹配"}
+
+    source_main, source_other = _get_product_images(source_id, data)
+    source_by_url = {img.get('image_url'): img for img in source_main + source_other}
+    source_images = [source_by_url[url] for url in source_urls if url in source_by_url]
+    if not source_images:
+        return {"success": False, "error": "找不到已选源图片，请重新选择"}
+
+    def is_main(image):
+        return image.get('image_type') in {'主图', '主轮播图'}
+
+    def is_carousel(image):
+        return image.get('image_type') in {'轮播图', '副轮播图'}
+
+    requested_main = sum(1 for image in source_images if is_main(image))
+    requested_carousel = sum(1 for image in source_images if is_carousel(image))
+    requested_other = len(source_images) - requested_main - requested_carousel
+    products = {}
+    for record in data.get('records', []):
+        pid = str(record.get('product_id', '') or '')
+        if not pid or pid == source_id or record.get('product_code', '') != source_code:
+            continue
+        products.setdefault(pid, []).append(record)
+
+    def image_groups(records):
+        by_url = {}
+        for record in records:
+            url = str(record.get('image_url', '') or '').strip()
+            if not url:
+                continue
+            current = by_url.get(url)
+            score = (record.get('impressions', 0) or 0, record.get('clicks', 0) or 0, record.get('transaction_amount', 0) or 0)
+            if current is None or score > current['_score']:
+                by_url[url] = {**record, 'image_url': url, '_score': score}
+        values = list(by_url.values())
+        return [x for x in values if is_main(x)], [x for x in values if is_carousel(x)], values
+
+    def pick_zero(images, count, randomize=False):
+        candidates = [image for image in images if (image.get('impressions', 0) or 0) == 0]
+        if len(candidates) < count:
+            return []
+        if randomize:
+            return random.SystemRandom().sample(candidates, count)
+        return sorted(candidates, key=lambda image: image.get('image_url', ''))[:count]
+
+    targets = []
+    for pid, records in products.items():
+        main, carousel, all_images = image_groups(records)
+        picked = []
+        picked.extend(pick_zero(main, requested_main))
+        picked.extend(pick_zero(carousel, requested_carousel, randomize=True))
+        if requested_other:
+            others = [image for image in all_images if not is_main(image) and not is_carousel(image)]
+            picked.extend(pick_zero(others, requested_other, randomize=True))
+        if len(picked) != len(source_images):
+            continue
+        # Keep the target entry only when every requested slot is zero-exposure.
+        if any((image.get('impressions', 0) or 0) != 0 for image in picked):
+            continue
+        targets.append({
+            'product_id': pid,
+            'store_name': records[0].get('store_name', ''),
+            'brand': records[0].get('brand', ''),
+            'product_code': source_code,
+            'product_title': records[0].get('product_title', ''),
+            'selected_images': [{k: image.get(k, '') for k in ('image_url', 'image_type', 'impressions', 'clicks')} for image in picked],
+            'selected_count': len(picked),
+        })
+    targets.sort(key=lambda item: (item.get('store_name', ''), item.get('product_id', '')))
+    return {
+        'success': True,
+        'source_product_id': source_id,
+        'product_code': source_code,
+        'source_image_count': len(source_images),
+        'source_image_types': [image.get('image_type', '') for image in source_images],
+        'target_count': len(targets),
+        'targets': targets,
+        'target_image_urls': {item['product_id']: [image['image_url'] for image in item['selected_images']] for item in targets},
     }
 
 

@@ -150,7 +150,9 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .section-heading h3{font-size:15px;margin:0}
 .section-heading span{font-size:12px;color:var(--text2)}
 .core-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
-.core-kpi-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.core-kpi-card{background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .2s,border-color .2s}
+.core-kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);border-color:#b9cbe8}
+.core-kpi-card:focus-visible{outline:3px solid rgba(47,111,237,.24);outline-offset:2px}
 .core-kpi-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
 .core-kpi-card:nth-child(2)::before{background:var(--accent2)}
 .core-kpi-card:nth-child(3)::before{background:#7c3aed}
@@ -285,6 +287,7 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-action-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .swap-btn{border:0;border-radius:6px;padding:8px 14px;color:#fff;font-size:13px;font-weight:600}
 .swap-btn.primary{background:var(--accent)}
+.swap-btn.auto{background:#f59e0b;color:#fff}
 .swap-btn.secondary{background:var(--accent2)}
 .swap-btn.danger{background:var(--red)}
 .swap-btn:disabled{opacity:.5;cursor:not-allowed}
@@ -302,6 +305,7 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-image-metrics strong{font-weight:600}
 .swap-detail-empty{padding:80px 24px;text-align:center;color:var(--text2);font-size:13px}
 .swap-preview-mini{margin-top:12px;padding:10px;border-radius:8px;background:var(--bg3);font-size:12px;line-height:1.7}
+.swap-auto-plan{margin-top:12px;padding:12px;border:1px solid #f4c76e;border-radius:9px;background:#fffaf0;color:#475467;font-size:12px}.swap-auto-plan-head{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#7a4b00}.swap-auto-plan p{margin:6px 0 10px}.swap-auto-targets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.swap-auto-target{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border:1px solid #f1dfb4;border-radius:7px;background:#fff}.swap-auto-target div{min-width:0;display:flex;flex-direction:column;gap:2px}.swap-auto-target div span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#667085}.swap-auto-count{flex-shrink:0;color:#946200;font-weight:700}.swap-auto-empty{padding:9px;border-radius:6px;background:#fff;color:#946200}.swap-auto-apply{margin-top:10px}
 .app-modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(15,23,42,.42);display:flex;align-items:center;justify-content:center;padding:24px}
 .app-modal{width:min(1060px,calc(100vw - 48px));max-height:calc(100vh - 48px);background:#fff;border-radius:14px;box-shadow:0 24px 64px rgba(15,23,42,.28);display:flex;flex-direction:column;overflow:hidden}
 .app-modal.compact{width:min(920px,calc(100vw - 48px))}
@@ -553,6 +557,7 @@ h2,.page-heading h2,.section-heading h3,.chart-box h3,.insight-card h3{color:#1f
 .product-directory-toolbar>label:first-of-type{order:1}.product-directory-toolbar>input{order:2}.product-directory-toolbar>label:nth-of-type(2){order:3}.date-range-control{order:4}.directory-hint{order:5}
 .store-products-modal{max-width:760px}.store-products-list{max-height:62vh;overflow:auto;display:flex;flex-direction:column;gap:8px}.store-product-row{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:12px;text-align:left;border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:9px 11px;cursor:pointer}.store-product-row:hover{background:#f3f7ff;border-color:#9ebcf4}.store-product-row img{width:48px;height:48px;object-fit:cover;border-radius:5px;background:#f1f3f6}.store-product-main,.store-product-metric{display:flex;flex-direction:column;gap:4px}.store-product-main strong{color:#1f2937;font-size:13px}.store-product-main small,.store-product-metric small{color:#667085;font-size:11px}.store-product-metric{text-align:right}.store-product-metric strong{color:#2f6fed;font-size:15px}
 .store-product-row img,.store-product-thumb{width:48px;height:48px;object-fit:cover;border-radius:5px;background:#f1f3f6}.store-product-main strong{line-height:1.35}
+.metric-store-modal{width:min(920px,calc(100vw - 48px))}.metric-store-table{width:100%;border-collapse:collapse;font-size:12px}.metric-store-table th{background:#f4f6f9;color:#667085;font-size:11px;font-weight:650;text-align:left;padding:10px 12px;position:sticky;top:0;z-index:1}.metric-store-table td{padding:11px 12px;border-top:1px solid #edf0f4;color:#344054;font-variant-numeric:tabular-nums}.metric-store-table tbody tr:hover td{background:#f7faff}.metric-store-table .rank{width:38px;color:#98a2b3}.metric-store-table .store-name{font-weight:650;color:#1f2937}.metric-store-table .metric-value{font-size:15px;font-weight:750;color:#2f6fed}.metric-store-table .supporting{color:#667085;font-size:11px}.metric-store-empty{padding:32px;text-align:center;color:#667085}.metric-store-loading{padding:32px;text-align:center;color:#667085}
 .filters>input[type=date]{display:none!important}.filters>input[type=date]+span,.filters>input[type=date]~button{display:none!important}.unified-date-picker + label{display:none!important}.unified-date-picker{position:relative;display:inline-block}.unified-date-trigger{height:34px;min-width:180px;padding:0 11px;border:1px solid #d9dee7;border-radius:6px;background:#fff;color:#344054;cursor:pointer;text-align:left}.unified-date-popover{position:absolute;z-index:40;top:41px;left:0;width:430px;background:#fff;border:1px solid #d9dee7;border-radius:9px;box-shadow:0 12px 30px rgba(16,24,40,.16);padding:12px}.unified-date-presets{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:12px;border-bottom:1px solid #eef0f3}.unified-date-presets button{border:0;border-radius:5px;background:#f2f4f7;color:#475467;padding:7px 10px;cursor:pointer}.unified-date-presets button.active,.unified-date-presets button:hover{background:#e8f1ff;color:#1769d2}.unified-date-inputs{display:flex;align-items:end;gap:8px;padding:12px 0;border-bottom:1px solid #eef0f3}.unified-date-inputs label{display:flex;flex-direction:column;gap:5px;color:#667085;font-size:12px}.unified-date-inputs input{height:32px;border:1px solid #d9dee7;border-radius:5px;padding:0 8px;color:#344054}.unified-date-selected{padding-top:10px;color:#1677ff;font-size:12px}
 .unified-date-popover{display:none!important}.unified-calendar-popover{position:fixed;z-index:100;top:128px;left:14px;width:540px;display:flex;background:#fff;border:1px solid #d9dee7;border-radius:10px;box-shadow:0 16px 36px rgba(16,24,40,.2);overflow:hidden}.unified-calendar-shortcuts{width:100px;background:#fafbfc;border-right:1px solid #eef0f3;padding:10px 0;display:flex;flex-direction:column}.unified-calendar-shortcuts button{border:0;background:transparent;text-align:left;padding:10px 14px;color:#667085;cursor:pointer}.unified-calendar-shortcuts button.active,.unified-calendar-shortcuts button:hover{background:#e8f5ff;color:#1677ff;font-weight:600}.unified-calendar-main{flex:1;padding:12px 14px}.unified-calendar-nav{display:grid;grid-template-columns:28px 1fr 1fr 28px;align-items:center;text-align:center;gap:4px;margin-bottom:8px}.unified-calendar-nav button{border:0;background:transparent;color:#98a2b3;font-size:22px;cursor:pointer}.unified-calendar-nav strong{font-size:13px;color:#344054}.unified-calendar-months{display:grid;grid-template-columns:1fr 1fr;gap:14px}.unified-calendar-week,.unified-calendar-days{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}.unified-calendar-week span{font-size:11px;color:#98a2b3;padding:4px 0}.unified-calendar-days button{height:26px;border:0;background:transparent;color:#344054;font-size:12px;cursor:pointer;border-radius:4px}.unified-calendar-days button.outside{color:#c5cbd3}.unified-calendar-days button.in-range{background:#e8f1ff;color:#1677ff;border-radius:0}.unified-calendar-days button.edge{background:#1677ff;color:#fff;border-radius:4px}.unified-calendar-footer{margin-top:10px;padding-top:10px;border-top:1px solid #eef0f3;color:#1677ff;font-size:12px}
 .store-filter-picker{position:relative;display:inline-block}.store-filter-trigger{height:34px;min-width:220px;padding:0 11px;border:1px solid #d9dee7;border-radius:6px;background:#fff;color:#344054;text-align:left;cursor:pointer}.store-filter-popover{position:absolute;z-index:45;top:41px;left:0;width:300px;max-height:360px;overflow:auto;background:#fff;border:1px solid #d9dee7;border-radius:8px;box-shadow:0 12px 30px rgba(16,24,40,.16);padding:8px}.store-filter-popover>input{width:100%;height:32px;border:1px solid #d9dee7;border-radius:5px;padding:0 8px;margin-bottom:6px}.store-filter-option{display:flex;gap:8px;align-items:center;padding:7px 5px;border-bottom:1px solid #f0f1f3;color:#344054;font-size:12px;cursor:pointer}.store-filter-option:hover{background:#f5f8ff}.store-filter-option input{margin:0}.filters>select[v-model="overviewStore"]{display:none!important}
@@ -622,6 +627,56 @@ button[style*="var(--bg3)"]{display:none!important}
 .directory-pagination button:disabled{cursor:not-allowed;color:#b0b7c3;background:#f5f6f8}
 @media(max-width:1200px){.product-directory-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.directory-reset{justify-self:start}.product-directory-toolbar .directory-hint{grid-column:1/-1}}
 @media(max-width:700px){.product-directory-toolbar{grid-template-columns:1fr}.directory-reset,.product-directory-toolbar .directory-hint{grid-column:1}}
+
+/* Overview drill-down: executive, dense and data-first */
+.overview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:14px}
+.overview-heading h2{margin:0 0 5px;font-size:22px;color:#172033}
+.overview-heading p{margin:0;color:#667085;font-size:13px}
+.overview-scope{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;margin-bottom:14px;background:#fff;border:1px solid #dfe4ec;border-radius:8px;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+.overview-scope .scope-label{font-size:12px;font-weight:700;color:#475467}
+.overview-scope-summary{margin-left:auto;font-size:12px;color:#667085}
+.overview-date-quick{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.overview-date-quick button{height:30px;padding:0 10px;border:1px solid #d9dee7;border-radius:15px;background:#fff;color:#667085;font-size:12px;cursor:pointer;white-space:nowrap}.overview-date-quick button:hover{border-color:#9bb8f3;color:#245bc5}.overview-date-quick button.active{border-color:#2f6fed;background:#2f6fed;color:#fff;font-weight:650}.overview-date-result{padding-left:2px;color:#667085;font-size:11px;white-space:nowrap}.unified-calendar-popover.overview-custom-calendar{width:440px}.unified-calendar-popover.overview-custom-calendar .unified-calendar-main{width:100%}
+.overview-kpi-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.overview-kpi-card{position:relative;text-align:left;min-width:0;padding:15px 15px 13px;background:#fff;border:1px solid #dfe4ec;border-radius:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.overview-kpi-card:hover{border-color:#9bb8f3;box-shadow:0 4px 12px rgba(47,111,237,.08);transform:translateY(-1px)}
+.overview-kpi-card.active{border-color:#2f6fed;box-shadow:0 0 0 2px rgba(47,111,237,.10)}
+.overview-kpi-card.active:before{content:"";position:absolute;left:-1px;top:12px;bottom:12px;width:3px;background:#2f6fed;border-radius:0 3px 3px 0}
+.overview-kpi-card .label{font-size:12px;color:#667085;margin-bottom:8px}
+.overview-kpi-card .value{font-size:24px;line-height:1;font-weight:750;color:#101828;font-variant-numeric:tabular-nums;white-space:nowrap}
+.overview-kpi-card .hint{margin-top:8px;font-size:11px;color:#98a2b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overview-analysis{background:#fff;border:1px solid #dfe4ec;border-radius:8px;overflow:hidden;margin-bottom:14px}
+.overview-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:16px 18px 12px;border-bottom:1px solid #edf0f4}
+.overview-section-head h3{margin:0 0 4px;font-size:16px;color:#172033}
+.overview-section-head p{margin:0;font-size:12px;color:#667085}
+.brand-control{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.brand-control label{font-size:12px;font-weight:700;color:#475467}
+.brand-control select,.code-control input{height:34px;border:1px solid #d0d5dd;border-radius:5px;background:#fff;color:#344054;padding:0 10px;font-size:12px;outline:none}
+.brand-control select{min-width:210px}.brand-control select:focus,.code-control input:focus{border-color:#2f6fed;box-shadow:0 0 0 2px rgba(47,111,237,.1)}
+.overview-brand-control select{min-width:240px;font-weight:650;color:#172033;background:#fff}
+.brand-trend-canvas{height:270px;padding:14px 18px 12px}
+.overview-trend-section{margin-bottom:14px}
+.overview-empty-chart{height:290px;display:flex;align-items:center;justify-content:center;color:#98a2b3;font-size:13px}
+ .store-drill-section{margin-bottom:14px}.overview-store-table-wrap{overflow:auto;max-height:390px}.overview-store-table{width:100%;border-collapse:collapse;min-width:1120px;font-size:12px}.overview-store-table th{position:sticky;top:0;z-index:2;padding:11px 12px;background:#f7f8fa;color:#667085;font-weight:600;text-align:right;border-bottom:1px solid #e4e7ec;white-space:nowrap}.overview-store-table th:first-child{text-align:left}.overview-store-table th.sortable-head{cursor:pointer;user-select:none;transition:color .12s}.overview-store-table th.sortable-head:hover{color:#245bc5}.table-sort-indicator{display:inline-block;min-width:12px;margin-left:3px;color:#98a2b3;font-size:11px;font-weight:700}.overview-store-table th.sortable-head.activeMetricHead .table-sort-indicator{color:#245bc5}.overview-store-table td{padding:12px;text-align:right;color:#344054;border-bottom:1px solid #edf0f4;font-variant-numeric:tabular-nums;white-space:nowrap}.overview-store-table td:first-child{text-align:left}.overview-store-table tbody tr{cursor:pointer;transition:background .12s}.overview-store-table tbody tr:hover{background:#f4f7fd}.overview-store-table tbody tr.active{background:#eef4ff;box-shadow:inset 3px 0 #2f6fed}.store-rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-right:9px;border-radius:4px;background:#f2f4f7;color:#667085;font-weight:700}.overview-store-table tr.active .store-rank{background:#2f6fed;color:#fff}.store-drill-button{border:0;background:transparent;color:#245bc5;font-weight:700;cursor:pointer;padding:4px 0}
+.overview-products{background:#fff;border:1px solid #dfe4ec;border-radius:8px;overflow:hidden}
+.code-control{display:flex;align-items:center;gap:8px}.code-control label{font-size:12px;font-weight:700;color:#475467}.code-control input{width:230px}
+.overview-product-table-wrap{overflow:auto;max-height:510px}
+.overview-product-table{width:100%;border-collapse:collapse;min-width:1040px;font-size:12px}
+.overview-product-table th{position:sticky;top:0;z-index:2;background:#f7f8fa;color:#667085;font-weight:600;text-align:right;padding:11px 10px;border-bottom:1px solid #e4e7ec;white-space:nowrap}
+.overview-product-table th:nth-child(-n+3){text-align:left}
+.overview-product-table th.sortable-head{cursor:pointer;user-select:none;transition:color .12s}.overview-product-table th.sortable-head:hover{color:#245bc5}.overview-product-table th.sortable-head.activeMetricHead .table-sort-indicator{color:#245bc5}
+.overview-product-table td{padding:10px;border-bottom:1px solid #edf0f4;color:#344054;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.overview-product-table td:nth-child(-n+3){text-align:left}.overview-product-table tbody tr{cursor:pointer;transition:background .12s}.overview-product-table tbody tr:hover{background:#f4f7fd}
+.overview-product-cell{display:flex;align-items:center;gap:10px;min-width:320px;max-width:430px}.overview-product-cell img,.product-thumb-placeholder{width:54px;height:54px;object-fit:cover;border-radius:5px;border:1px solid #e4e7ec;background:#f2f4f7;flex:0 0 auto}
+.overview-product-copy{min-width:0}.overview-product-copy strong{display:block;max-width:330px;color:#172033;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.overview-product-copy small{display:block;margin-top:5px;color:#667085}
+.product-link{color:#245bc5;font-weight:700}.activeMetricHead{color:#245bc5!important;background:#eef4ff!important}.activeMetricCell{color:#245bc5!important;font-size:14px;font-weight:750;background:#f7f9fe}.overview-product-count{font-size:12px;color:#667085}
+.product-detail-modal{width:min(1480px,95vw);max-height:88vh}.product-detail-modal .app-modal-body{padding:0;overflow:auto}
+.product-summary-strip{display:grid;grid-template-columns:minmax(300px,2fr) repeat(6,minmax(105px,1fr));background:#fff;border-bottom:1px solid #e4e7ec}
+.product-summary-strip>div{background:#fff;padding:11px 14px;border-right:1px solid #e4e7ec;border-bottom:1px solid #e4e7ec}.product-summary-strip span{display:block;color:#667085;font-size:11px;margin-bottom:4px}.product-summary-strip strong{display:block;color:#172033;font-size:14px;font-variant-numeric:tabular-nums}
+.creative-detail-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #e4e7ec;background:#fbfcfd}.creative-detail-toolbar label{font-size:12px;color:#475467;font-weight:600}.creative-detail-date-buttons{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.creative-detail-date-buttons button{height:30px;padding:0 11px;border:1px solid #d9dee7;border-radius:15px;background:#fff;color:#667085;font-size:12px;cursor:pointer}.creative-detail-date-buttons button:hover{border-color:#9bb8f3;color:#245bc5}.creative-detail-date-buttons button.active{border-color:#2f6fed;background:#2f6fed;color:#fff;font-weight:650}.creative-detail-date-custom{display:flex;align-items:center;gap:7px;width:100%;padding-top:8px}.creative-detail-date-custom input{height:32px;border:1px solid #d0d5dd;border-radius:5px;padding:0 8px;color:#344054}.creative-detail-date-custom button{height:32px;border:0;border-radius:5px;background:#2f6fed;color:#fff;padding:0 13px;font-weight:650;cursor:pointer}.creative-detail-date-label{margin-left:auto;color:#667085;font-size:11px}
+.creative-detail-table{width:100%;border-collapse:collapse;min-width:1240px;font-size:12px}.creative-detail-table th{position:sticky;top:0;z-index:2;background:#f5f6f8;color:#667085;padding:11px 12px;text-align:right;border-bottom:1px solid #dfe4ec;white-space:nowrap}.creative-detail-table th:first-child,.creative-detail-table th:nth-child(2),.creative-detail-table th:nth-child(3){text-align:left}.creative-detail-table th.sortable-head{cursor:pointer;user-select:none;transition:color .12s}.creative-detail-table th.sortable-head:hover{color:#245bc5}.creative-detail-table th.sortable-head.activeMetricHead .table-sort-indicator{color:#245bc5}.creative-detail-table td{padding:12px;text-align:right;border-bottom:1px solid #e9edf2;color:#344054;font-variant-numeric:tabular-nums}.creative-detail-table td:first-child,.creative-detail-table td:nth-child(2),.creative-detail-table td:nth-child(3){text-align:left}.creative-detail-table img{width:86px;height:86px;object-fit:cover;border:1px solid #e4e7ec;border-radius:5px;background:#f2f4f7}.creative-detail-table tbody tr:hover{background:#fafbfc}.status-pass{color:#067647}.status-reject{color:#d92d20}.metric-note{font-size:11px;color:#98a2b3}
+.creative-thumb-wrap{display:flex;align-items:center;gap:9px}.creative-thumb-wrap span{display:inline-flex;padding:3px 7px;border-radius:4px;background:#f2f4f7;color:#667085;font-size:11px;white-space:nowrap}.creative-image-placeholder{display:flex;align-items:center;justify-content:center;width:86px;height:86px;border:1px dashed #d0d5dd;border-radius:5px;background:#f8f9fb;color:#98a2b3;font-size:11px}.creative-detail-table .zero-data-row{background:#fcfcfd}.creative-detail-table .zero-data-row td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)){color:#98a2b3}
+@media(max-width:1400px){.overview-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.overview-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-section-head{flex-direction:column}.brand-control,.code-control{width:100%}.brand-control select,.code-control input{flex:1}.overview-date-quick{width:100%}.overview-scope-summary{width:100%;margin-left:0}.product-summary-strip{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -635,6 +690,106 @@ button[style*="var(--bg3)"]{display:none!important}
   <main id="main">
     <!-- Module 0: Overview -->
     <div v-if="current==='overview'">
+      <div class="overview-heading">
+        <div>
+          <h2>观看数据概览</h2>
+          <p>选择品牌后查看六项核心指标与对应趋势，再从指标逐级查看店铺、商品与图片表现。</p>
+        </div>
+        <span class="core-badge">品牌 → 指标 / 趋势 → 店铺 → 商品 → 图片</span>
+      </div>
+
+      <section class="overview-scope">
+        <span class="scope-label">品牌</span>
+        <div class="brand-control overview-brand-control">
+          <select v-model="overviewBrand">
+            <option value="">全部品牌</option>
+            <option v-for="brand in overviewBrandOptions" :key="brand" :value="brand">{{brand}}</option>
+          </select>
+        </div>
+        <div class="overview-date-quick" @click.stop>
+          <button v-for="p in overviewVisibleDatePresets" :key="p.key" :class="{active:overviewDatePreset===p.key}" @click="applyOverviewDatePreset(p.key)">{{p.label}}</button>
+          <span class="overview-date-result" v-if="overviewDatePreset==='custom'">{{overviewDateLabel}}</span>
+        </div>
+        <span class="overview-scope-summary" v-if="summary">{{overviewBrand||'全部品牌'}} · {{summary.total_stores}} 家店铺 · {{summary.total_products}} 个商品 · {{overviewDateLabel}}</span>
+      </section>
+
+      <section class="overview-kpi-grid" v-if="summary">
+        <button class="overview-kpi-card" v-for="m in coreKpiMetrics" :key="m.key" :class="{active:activeOverviewMetric===m.key}" @click="selectOverviewMetric(m.key)">
+          <span class="label">{{m.label}}</span>
+          <strong class="value">{{m.format(summary)}}</strong>
+          <span class="hint">{{m.hint}}</span>
+        </button>
+      </section>
+
+      <section class="overview-analysis overview-trend-section">
+        <div class="overview-section-head">
+          <div>
+            <h3>{{overviewBrand||'全部品牌'}} · {{activeOverviewMetricMeta.label}}{{overviewTrendIsSingleDay?'单日表现':'趋势'}}</h3>
+            <p v-if="overviewTrendIsSingleDay">当前为单天数据，使用柱状图对比各品牌表现。</p>
+            <p v-else>按日展示当前品牌的指标变化；切换上方品牌或核心指标时同步更新。</p>
+          </div>
+          <span class="overview-product-count">{{brandTrendData.dates.length}} 个日期</span>
+        </div>
+        <div v-if="overviewTrendLoading" class="overview-empty-chart">正在加载趋势数据…</div>
+        <div v-else-if="!brandTrendData.series.length" class="overview-empty-chart">当前品牌和日期范围暂无趋势数据</div>
+        <div v-else class="brand-trend-canvas"><canvas id="chartBrandTrend"></canvas></div>
+      </section>
+
+      <section class="overview-analysis store-drill-section">
+        <div class="overview-section-head">
+          <div>
+            <h3>{{overviewBrand||'全部品牌'}} · {{activeOverviewMetricMeta.label}}店铺明细</h3>
+            <p>点击表头指标可独立排序，点击店铺继续查看商品。</p>
+          </div>
+          <span class="overview-product-count">{{overviewMetricRows.length}} 家店铺</span>
+        </div>
+        <div v-if="overviewAnalysisLoading" class="overview-empty-chart">正在加载店铺数据…</div>
+        <div v-else-if="!overviewMetricRows.length" class="empty">当前品牌和日期范围暂无店铺数据</div>
+        <div v-else class="overview-store-table-wrap">
+          <table class="overview-store-table">
+            <thead><tr><th>店铺</th><th class="sortable-head" :class="{activeMetricHead:overviewStoreSortKey==='impressions'}" @click="toggleOverviewStoreSort('impressions')">曝光 <span class="table-sort-indicator">{{overviewStoreSortIndicator('impressions')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewStoreSortKey==='clicks'}" @click="toggleOverviewStoreSort('clicks')">点击 <span class="table-sort-indicator">{{overviewStoreSortIndicator('clicks')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewStoreSortKey==='ctr'}" @click="toggleOverviewStoreSort('ctr')">点击率 <span class="table-sort-indicator">{{overviewStoreSortIndicator('ctr')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewStoreSortKey==='cvr'}" @click="toggleOverviewStoreSort('cvr')">点击转化率 <span class="table-sort-indicator">{{overviewStoreSortIndicator('cvr')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewStoreSortKey==='orders'}" @click="toggleOverviewStoreSort('orders')">成交笔数 <span class="table-sort-indicator">{{overviewStoreSortIndicator('orders')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewStoreSortKey==='transaction'}" @click="toggleOverviewStoreSort('transaction')">交易额(元) <span class="table-sort-indicator">{{overviewStoreSortIndicator('transaction')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewStoreSortKey==='products'}" @click="toggleOverviewStoreSort('products')">商品数 <span class="table-sort-indicator">{{overviewStoreSortIndicator('products')}}</span></th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="(row,index) in overviewMetricRows" :key="row.store_name" :class="{active:selectedOverviewStore===row.store_name}" @click="selectOverviewStoreRow(row.store_name)">
+                <td><span class="store-rank">{{index+1}}</span><strong>{{row.store_name}}</strong></td>
+                <td :class="{activeMetricCell:overviewStoreSortKey==='impressions'}">{{fmtInt(row.total_impressions)}}</td><td :class="{activeMetricCell:overviewStoreSortKey==='clicks'}">{{fmtInt(row.total_clicks)}}</td><td :class="{activeMetricCell:overviewStoreSortKey==='ctr'}">{{fmtPct(row.ctr)}}</td><td :class="{activeMetricCell:overviewStoreSortKey==='cvr'}">{{fmtPct(row.conversion_rate)}}</td><td :class="{activeMetricCell:overviewStoreSortKey==='orders'}">{{fmtInt(row.total_orders)}}</td><td :class="{activeMetricCell:overviewStoreSortKey==='transaction'}">¥{{fmtMoney(row.total_transaction)}}</td><td :class="{activeMetricCell:overviewStoreSortKey==='products'}">{{fmtInt(row.product_count)}}</td><td><button class="store-drill-button">查看商品</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="overview-products" v-if="selectedOverviewStore">
+        <div class="overview-section-head">
+          <div>
+            <h3>{{selectedOverviewStore}} · 商品信息</h3>
+            <p>{{overviewBrand||'全部品牌'}} · 点击指标表头可独立排序，点击商品查看每张图片的详细数据。</p>
+          </div>
+          <div class="code-control">
+            <label>商品编码</label>
+            <input v-model.trim="overviewCodeSearch" list="overview-code-options" placeholder="输入编码筛选…">
+            <datalist id="overview-code-options"><option v-for="code in overviewCodeOptions" :key="code" :value="code"></option></datalist>
+            <span class="overview-product-count">{{filteredOverviewProducts.length}} 个商品</span>
+          </div>
+        </div>
+        <div v-if="!filteredOverviewProducts.length" class="empty">当前店铺或商品编码下暂无商品数据</div>
+        <div v-else class="overview-product-table-wrap">
+          <table class="overview-product-table">
+            <thead><tr><th>商品</th><th>商品ID</th><th>商品编码</th><th class="sortable-head" :class="{activeMetricHead:overviewProductSortKey==='impressions'}" @click="toggleOverviewProductSort('impressions')">曝光 <span class="table-sort-indicator">{{overviewProductSortIndicator('impressions')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewProductSortKey==='clicks'}" @click="toggleOverviewProductSort('clicks')">点击 <span class="table-sort-indicator">{{overviewProductSortIndicator('clicks')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewProductSortKey==='ctr'}" @click="toggleOverviewProductSort('ctr')">点击率 <span class="table-sort-indicator">{{overviewProductSortIndicator('ctr')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewProductSortKey==='cvr'}" @click="toggleOverviewProductSort('cvr')">点击转化率 <span class="table-sort-indicator">{{overviewProductSortIndicator('cvr')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewProductSortKey==='orders'}" @click="toggleOverviewProductSort('orders')">成交笔数 <span class="table-sort-indicator">{{overviewProductSortIndicator('orders')}}</span></th><th class="sortable-head" :class="{activeMetricHead:overviewProductSortKey==='transaction'}" @click="toggleOverviewProductSort('transaction')">交易额(元) <span class="table-sort-indicator">{{overviewProductSortIndicator('transaction')}}</span></th></tr></thead>
+            <tbody>
+              <tr v-for="p in filteredOverviewProducts" :key="p.product_id" @click="openProductImages(p)">
+                <td><div class="overview-product-cell"><img v-if="p.main_image_url" :src="p.main_image_url" loading="lazy"><span v-else class="product-thumb-placeholder"></span><div class="overview-product-copy"><strong>{{p.product_title||p.product_code||'未命名商品'}}</strong><small>点击查看图片数据</small></div></div></td>
+                <td class="product-link">{{p.product_id}}</td>
+                <td>{{p.product_code||'-'}}</td>
+                <td :class="{activeMetricCell:overviewProductSortKey==='impressions'}">{{fmtInt(p.total_impressions)}}</td><td :class="{activeMetricCell:overviewProductSortKey==='clicks'}">{{fmtInt(p.total_clicks)}}</td><td :class="{activeMetricCell:overviewProductSortKey==='ctr'}">{{fmtPct(p.ctr)}}</td><td :class="{activeMetricCell:overviewProductSortKey==='cvr'}">{{fmtPct(p.conversion_rate)}}</td><td :class="{activeMetricCell:overviewProductSortKey==='orders'}">{{fmtInt(p.total_orders)}}</td><td :class="{activeMetricCell:overviewProductSortKey==='transaction'}">¥{{fmtMoney(p.total_transaction)}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Retained legacy overview markup for rollback only -->
+    <div v-if="current==='overview-legacy'">
       <div class="page-heading">
         <div>
           <h2>观看数据概览</h2>
@@ -657,7 +812,7 @@ button[style*="var(--bg3)"]{display:none!important}
         </select>
       </div>
       <div class="core-kpi-grid" v-if="summary">
-        <div class="core-kpi-card" v-for="m in coreKpiMetrics" :key="m.key">
+        <div class="core-kpi-card" v-for="m in coreKpiMetrics" :key="m.key" role="button" tabindex="0" :aria-label="`查看${m.label}的店铺明细`" @click="openOverviewMetric(m.key)" @keydown.enter="openOverviewMetric(m.key)">
           <div class="label">{{m.label}}</div>
           <div class="value" :style="{color:m.color}">{{m.format(summary)}}</div>
           <div class="hint">{{m.hint}}</div>
@@ -707,222 +862,6 @@ button[style*="var(--bg3)"]{display:none!important}
           <span>点击柱形可在当前页弹窗查看图片</span>
           </div>
           <div class="chart-wrap tall"><canvas id="chartTopProducts"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Module 1: Creative Compare -->
-    <div id="creative-module" v-if="current==='creative'">
-      <div class="product-directory-toolbar">
-        <div class="directory-filter-field directory-date-field">
-          <label>日期</label>
-          <div class="date-range-control" @click.stop>
-            <button class="date-range-trigger" @click="creativeDatePopover=!creativeDatePopover">{{creativeDateRangeLabel}} <span class="date-chevron">⌄</span></button>
-            <div class="date-range-popover" v-if="creativeDatePopover">
-              <div class="date-presets">
-                <button v-for="preset in creativeDatePresets" :key="preset.key" :class="{active:creativeDatePreset===preset.key}" @click="applyCreativeDatePreset(preset.key)">{{preset.label}}</button>
-              </div>
-              <div class="date-range-custom">
-                <label>开始日期<input type="date" v-model="creativeDateFrom" @change="applyCreativeCustomDate"></label>
-                <span>至</span>
-                <label>结束日期<input type="date" v-model="creativeDateTo" @change="applyCreativeCustomDate"></label>
-              </div>
-              <div class="date-range-footer">已选：{{creativeDateRangeLabel}}</div>
-            </div>
-          </div>
-        </div>
-        <div class="directory-filter-field">
-          <label>品牌</label>
-          <select v-model="creativeBrandFilter">
-            <option value="">全部品牌</option>
-            <option v-for="brand in creativeBrandOptions" :key="brand" :value="brand">{{brand}}</option>
-          </select>
-        </div>
-        <div class="directory-filter-field">
-          <label>商品编码</label>
-          <input v-model.trim="creativeCodeFilter" placeholder="输入编码筛选...">
-        </div>
-        <div class="directory-filter-field">
-          <label>店铺</label>
-          <select v-model="creativeStoreFilter">
-            <option value="">全部店铺</option>
-            <option v-for="store in creativeStoreOptions" :key="store" :value="store">{{store}}</option>
-          </select>
-        </div>
-        <button class="directory-reset" :disabled="!creativeDirectoryHasFilters" @click="clearCreativeDirectoryFilters">清空筛选</button>
-        <span class="directory-hint">共 {{filteredCreativeProductAggs.length}} 个匹配商品 · 第 {{creativeDirectoryPage}} / {{creativeDirectoryTotalPages}} 页</span>
-      </div>
-      <div class="page-heading">
-        <div>
-          <h2>图片分析</h2>
-          <div class="page-subtitle">先比较商品观看表现，再进入单品查看每张图片的曝光、点击与转化。</div>
-        </div>
-        <span class="core-badge">图片 + 商品</span>
-      </div>
-      <div class="filters">
-        <div class="autocomplete">
-          <input v-model="creativeSearch" placeholder="搜索商品ID或名称..." @input="showCreativeDropdown=true" @focus="showCreativeDropdown=true">
-          <div class="dropdown" v-if="showCreativeDropdown && filteredCreativeProducts.length">
-            <div class="item" v-for="p in filteredCreativeProducts" :key="p.product_id" @click="selectCreativeProduct(p)">
-              <span class="id">{{p.product_id}}</span>{{p.product_title||'(无标题)'}}<br><small style="color:var(--text2)">{{p.store_name}}<span v-if="p.product_code"> · {{p.product_code}}</span></small>
-            </div>
-          </div>
-        </div>
-        <button @click="showCreativeDropdown=false;loadCreativeData()" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:13px">查询图片</button>
-      </div>
-      <div class="tip" v-if="creativeProduct">当前商品：<strong>{{creativeProduct.product_id}}</strong> · {{creativeProduct.store_name}}<span v-if="creativeProduct.product_code"> · {{creativeProduct.product_code}}</span></div>
-      <div class="filters" v-if="creativeData&&creativeDates.length" style="margin-bottom:12px">
-        <label>日期</label>
-        <select v-model="creativeDate" @change="loadCreativeData()">
-          <option v-for="d in creativeDates" :key="d" :value="d">{{d}}</option>
-        </select>
-        <span style="color:var(--text2);font-size:13px">显示 {{displayedCreativeRows.length}} / {{creativeData.creative_count}} 张唯一图片</span>
-      </div>
-      <div class="creative-detail-panel" v-if="creativeData">
-        <div class="creative-toolbar">
-          <label>图片排序</label>
-          <select v-model="creativeSort">
-            <option value="impressions">曝光量</option>
-            <option value="clicks">点击量</option>
-            <option value="ctr">CTR</option>
-            <option value="conversion_rate">点击转化率</option>
-          </select>
-          <label>最低曝光</label>
-          <select v-model.number="creativeMinImpressions">
-            <option :value="0">不限</option>
-            <option :value="1000">1,000</option>
-            <option :value="5000">5,000</option>
-            <option :value="10000">10,000</option>
-          </select>
-          <span style="font-size:11px;color:var(--text2)">高比例指标建议结合曝光量判断</span>
-        </div>
-        <!-- Creative cards -->
-        <div class="creative-grid">
-          <div class="creative-card" v-for="(c,i) in displayedCreativeRows" :key="c.image_key||c.image_url">
-            <img :src="c.image_url" @error="e=>e.target.style.display='none'" loading="lazy">
-            <div class="info">
-              <div class="type"><span class="creative-rank">{{i+1}}</span>{{c.image_type}} <span :class="'status '+(c.status==='审核通过'?'status-pass':'status-fail')">{{c.status}}</span></div>
-              <div class="metrics">
-                <div><span>曝光</span> <strong>{{fmtInt(c.impressions)}}</strong></div>
-                <div><span>点击</span> <strong>{{fmtInt(c.clicks)}}</strong></div>
-                <div><span>CTR</span> <strong>{{fmtPct(c.ctr)}}</strong></div>
-                <div><span>点击转化率</span> <strong>{{fmtPct(c.conversion_rate)}}</strong></div>
-              </div>
-              <details class="creative-business">
-                <summary>更多经营数据</summary>
-                <div class="metrics">
-                  <div><span>交易额</span> <strong>¥{{fmtMoney(c.transaction_amount)}}</strong></div>
-                  <div><span>订单</span> <strong>{{c.order_count||0}}</strong></div>
-                </div>
-              </details>
-            </div>
-          </div>
-        </div>
-        <div class="empty" v-if="!displayedCreativeRows.length">当前曝光门槛下没有图片，请降低“最低曝光”。</div>
-      </div>
-      <div class="empty" v-else-if="!creativeLoading">正在准备默认商品数据，也可以直接搜索商品。</div>
-      <div class="loading" v-if="creativeLoading">加载中...</div>
-
-      <div class="section-heading">
-        <h3>商品观看表现</h3>
-        <span>当前按 {{metricLabel}} 排序，点击商品可查看图片</span>
-      </div>
-      <div class="analysis-toolbar">
-        <div class="metric-toggle">
-          <button :class="{active:compareMetric==='total_impressions'}" @click="compareMetric='total_impressions'">曝光</button>
-          <button :class="{active:compareMetric==='total_clicks'}" @click="compareMetric='total_clicks'">点击</button>
-          <button :class="{active:compareMetric==='ctr'}" @click="compareMetric='ctr'">CTR</button>
-          <button :class="{active:compareMetric==='conversion_rate'}" @click="compareMetric='conversion_rate'">点击转化率</button>
-        </div>
-        <div class="filters" style="margin:0">
-          <label>显示 TOP</label>
-          <select v-model="compareTop">
-            <option :value="10">10</option>
-            <option :value="20">20</option>
-            <option :value="0">全部</option>
-          </select>
-          <input v-model="compareSearch" placeholder="搜索商品ID/标题..." style="width:200px">
-        </div>
-      </div>
-      <div class="table-card product-directory-table-card">
-        <table class="data-table" v-if="filteredCreativeProductAggs.length">
-          <thead><tr><th>商品ID</th><th>编码</th><th>品牌</th><th>店铺</th><th>图片数</th><th>曝光</th><th>点击</th><th>CTR</th><th>点击转化率</th></tr></thead>
-          <tbody>
-            <tr v-for="p in pagedCreativeProductAggs" :key="p.product_id" @click="openProductImages(p)" style="cursor:pointer">
-              <td style="color:var(--accent);font-weight:600">{{p.product_id}}</td>
-              <td>{{p.product_code||'-'}}</td>
-              <td>{{p.brand||'-'}}</td>
-              <td>{{p.store_name||'-'}}</td>
-              <td>{{p.creative_count}}</td>
-              <td>{{fmtInt(p.total_impressions)}}</td>
-              <td>{{fmtInt(p.total_clicks)}}</td>
-              <td>{{fmtPct(p.ctr)}}</td>
-              <td>{{fmtPct(p.conversion_rate)}}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="empty" v-else>没有匹配的商品，请调整日期、品牌、商品编码或店铺。</div>
-        <div class="directory-pagination" v-if="filteredCreativeProductAggs.length">
-          <button :disabled="creativeDirectoryPage<=1" @click="creativeDirectoryPage--">上一页</button>
-          <span>{{(creativeDirectoryPage-1)*creativeDirectoryPageSize+1}}–{{Math.min(creativeDirectoryPage*creativeDirectoryPageSize,filteredCreativeProductAggs.length)}} / {{filteredCreativeProductAggs.length}}</span>
-          <button :disabled="creativeDirectoryPage>=creativeDirectoryTotalPages" @click="creativeDirectoryPage++">下一页</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Module 3: Trends -->
-    <div v-if="current==='trend'">
-      <div class="page-heading">
-        <div>
-          <h2>观看趋势</h2>
-          <div class="page-subtitle">观察曝光、点击和效率指标随时间的变化，默认展示全部商品曝光趋势。</div>
-        </div>
-        <span class="core-badge">按天查看</span>
-      </div>
-      <div class="filters">
-        <div class="autocomplete">
-          <input v-model="trendSearch" placeholder="搜索商品（留空=全部）..." @focus="showTrendDropdown=true" @input="showTrendDropdown=true">
-          <div class="dropdown" v-if="showTrendDropdown && filteredTrendProducts.length">
-            <div class="item" v-for="p in filteredTrendProducts" :key="p.product_id" @click="selectTrendProduct(p)">
-              <span class="id">{{p.product_id}}</span>{{p.product_title||'(全部)'}}<br><small style="color:var(--text2)">{{p.store_name}}</small>
-            </div>
-          </div>
-        </div>
-        <button @click="showTrendDropdown=false;loadTrends()" style="background:var(--accent);color:#fff;border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-size:13px">查询</button>
-        <select v-model="trendMetric" @change="loadTrends()">
-          <option value="impressions">曝光量</option>
-          <option value="clicks">点击量</option>
-          <option value="ctr">CTR</option>
-          <option value="conversion_rate">点击转化率</option>
-        </select>
-        <div class="pills">
-          <div class="pill" :class="{active:trendMode==='single'}" @click="trendMode='single';loadTrends()">单品</div>
-          <div class="pill" :class="{active:trendMode==='multi'}" @click="trendMode='multi';loadTrends()">多品叠加</div>
-        </div>
-        <div class="unified-date-picker" @click.stop><button class="unified-date-trigger" @click="trendDateOpen=!trendDateOpen">{{trendDateLabel}}⌄</button><div class="unified-date-popover" v-if="trendDateOpen"><div class="unified-date-presets"><button v-for="p in unifiedDatePresets" :key="p.key" :class="{active:trendDatePreset===p.key}" @click="applyTrendDatePreset(p.key)">{{p.label}}</button></div><div class="unified-date-inputs"><label>开始日期<input type="date" v-model="trendDateFrom" @change="trendQuickRange='';loadTrends()"></label><span>至</span><label>结束日期<input type="date" v-model="trendDateTo" @change="trendQuickRange='';loadTrends()"></label></div><div class="unified-date-selected">已选：{{trendDateLabel}}</div></div></div>
-        <input type="date" v-model="trendDateFrom" style="width:140px;cursor:pointer" title="开始日期" @click="e=>e.target.showPicker()" @change="trendQuickRange='';loadTrends()">
-        <span style="color:var(--text2)">至</span>
-        <input type="date" v-model="trendDateTo" style="width:140px;cursor:pointer" title="结束日期" @click="e=>e.target.showPicker()" @change="trendQuickRange='';loadTrends()">
-      </div>
-      <div class="metric-toggle" style="width:max-content;margin-bottom:12px">
-        <button :class="{active:trendQuickRange==='7'}" @click="applyTrendQuickRange(7)">近 7 天</button>
-        <button :class="{active:trendQuickRange==='30'}" @click="applyTrendQuickRange(30)">近 30 天</button>
-        <button :class="{active:trendQuickRange==='all'}" @click="applyTrendQuickRange(0)">全部日期</button>
-      </div>
-      <!-- Multi-product picker -->
-      <div class="pills" v-if="trendMode==='multi'" style="margin-bottom:12px">
-        <div class="pill" v-for="p in topProducts.slice(0,10)" :key="p.product_id" 
-             :class="{active:trendMultiIds.includes(p.product_id)}"
-             @click="toggleTrendMulti(p.product_id)">{{p.product_id}}</div>
-        <button @click="loadTrends()" style="background:var(--accent);color:var(--bg);border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;margin-left:8px">更新</button>
-      </div>
-      <div class="chart-row">
-        <div class="chart-box full">
-          <div class="section-heading" style="margin:0 0 12px">
-            <h3>{{trendMetricLabel}} 趋势</h3>
-            <button v-if="trendProduct" class="secondary-action" @click="openProductImages(trendProduct)">查看该商品图片</button>
-          </div>
-          <div class="chart-wrap tall"><canvas id="chartTrends"></canvas></div>
         </div>
       </div>
     </div>
@@ -1107,6 +1046,10 @@ button[style*="var(--bg3)"]{display:none!important}
             </div>
           </div>
           <div class="swap-action-row">
+            <button class="swap-btn auto" @click="autoPlanSwap"
+                    :disabled="swapAutoPlanning||!swapSource||!swapSelectedImages.length">
+              {{swapAutoPlanning?'匹配中...':'一键匹配零曝光图'}}
+            </button>
             <button class="swap-btn secondary" @click="previewSwap"
                     :disabled="!swapSource||!swapTargets.length||!swapSelectedImages.length">预览方案</button>
             <button class="swap-btn primary" @click="executeSwap"
@@ -1252,48 +1195,93 @@ button[style*="var(--bg3)"]{display:none!important}
       </section>
     </div>
 
-    <div v-if="unifiedCalendarVisible" class="unified-calendar-popover" @click.stop>
-      <div class="unified-calendar-shortcuts"><button v-for="p in unifiedDatePresets" :key="p.key" :class="{active:unifiedCalendarPreset===p.key}" @click="applyUnifiedCalendarPreset(p.key)">{{p.label}}</button></div>
+    <div v-if="overviewMetricModal" class="app-modal-backdrop" @click.self="closeOverviewMetric">
+      <section class="app-modal metric-store-modal">
+        <div class="app-modal-head">
+          <div>
+            <h3>{{overviewMetricModal.label}} · 店铺明细</h3>
+            <p>{{overviewMetricFilterLabel}}，共 {{overviewMetricModalRows.length}} 家店铺，按当前指标从高到低排序</p>
+          </div>
+          <button class="app-modal-close" aria-label="关闭店铺指标明细" @click="closeOverviewMetric">×</button>
+        </div>
+        <div class="app-modal-body" style="padding-top:0">
+          <div v-if="overviewMetricLoading" class="metric-store-loading">正在加载店铺数据…</div>
+          <div v-else-if="!overviewMetricRows.length" class="metric-store-empty">当前筛选范围内暂无店铺数据</div>
+          <div v-else style="overflow:auto;max-height:58vh">
+            <table class="metric-store-table">
+              <thead><tr><th>排名</th><th>店铺</th><th>{{overviewMetricModal.label}}</th><th>曝光</th><th>点击</th><th>订单</th><th>商品数</th></tr></thead>
+              <tbody><tr v-for="(row,index) in overviewMetricModalRows" :key="row.store_name"><td class="rank">{{index+1}}</td><td class="store-name">{{row.store_name}}</td><td class="metric-value">{{formatOverviewMetricValue(row,overviewMetricModal.key)}}</td><td>{{fmtInt(row.total_impressions)}}</td><td>{{fmtInt(row.total_clicks)}}</td><td>{{fmtInt(row.total_orders)}}</td><td class="supporting">{{fmtInt(row.product_count)}}</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div v-if="unifiedCalendarVisible" class="unified-calendar-popover" :class="{'overview-custom-calendar':unifiedCalendarMode==='overview'}" @click.stop>
+      <div v-if="unifiedCalendarMode==='trend'" class="unified-calendar-shortcuts"><button v-for="p in unifiedDatePresets" :key="p.key" :class="{active:unifiedCalendarPreset===p.key}" @click="applyUnifiedCalendarPreset(p.key)">{{p.label}}</button></div>
       <div class="unified-calendar-main"><div class="unified-calendar-nav"><button @click="moveUnifiedCalendar(-1)">‹</button><strong>{{unifiedCalendarMonths[0].label}}</strong><strong>{{unifiedCalendarMonths[1].label}}</strong><button @click="moveUnifiedCalendar(1)">›</button></div><div class="unified-calendar-months"><div class="unified-calendar-month" v-for="month in unifiedCalendarMonths" :key="month.key"><div class="unified-calendar-week"><span v-for="w in unifiedWeekdays" :key="w">{{w}}</span></div><div class="unified-calendar-days"><button v-for="day in month.days" :key="day.date" :class="{outside:!day.current,'in-range':isUnifiedDateInRange(day.date),edge:isUnifiedDateEdge(day.date)}" :disabled="!day.current" @click="chooseUnifiedCalendarDay(day.date)">{{day.day}}</button></div></div></div><div class="unified-calendar-footer">已选：<strong>{{unifiedCalendarSelectionLabel}}</strong></div></div>
     </div>
 
     <!-- Quick creative viewer: keeps the current dashboard context -->
     <div v-if="quickCreativeOpen" class="app-modal-backdrop" @click.self="quickCreativeOpen=false">
-      <section class="app-modal">
+      <section class="app-modal product-detail-modal">
         <div class="app-modal-head">
           <div>
-            <h3>商品图片信息 <span v-if="creativeData" class="swap-count">{{creativeData.creative_count}} 张唯一图片</span></h3>
-            <p v-if="creativeProduct">{{creativeProduct.product_id}} · {{creativeProduct.store_name||'-'}} · {{creativeProduct.product_code||'无编码'}}</p>
+            <h3>{{creativeProduct?.product_title||'商品图片表现'}} <span v-if="creativeData" class="swap-count">{{creativeData.creative_count}} 张唯一图片</span></h3>
+            <p v-if="creativeProduct">{{creativeProduct.product_code||'无编码'}} · 商品ID {{creativeProduct.product_id}} · {{creativeProduct.store_name||'-'}}</p>
+          </div>
+          <div v-if="swapAutoPlan" class="swap-auto-plan">
+            <div class="swap-auto-plan-head">
+              <strong>一键匹配结果</strong>
+              <span>{{swapAutoPlan.product_code}} · 命中 {{swapAutoPlan.target_count}} 个目标链接</span>
+            </div>
+            <p>按编码匹配；主轮播图优先匹配主轮播图，副轮播图从曝光为 0 的副轮播图中匹配。</p>
+            <div v-if="!swapAutoPlan.target_count" class="swap-auto-empty">没有找到满足条件的目标链接，请减少源图数量或检查商品编码。</div>
+            <div v-else class="swap-auto-targets">
+              <div v-for="target in swapAutoPlan.targets" :key="target.product_id" class="swap-auto-target">
+                <div><strong>{{target.product_id}}</strong><span>{{target.store_name}}</span></div>
+                <span class="swap-auto-count">{{target.selected_count}} 张零曝光图</span>
+              </div>
+            </div>
+            <button v-if="swapAutoPlan.target_count" class="swap-btn primary swap-auto-apply" @click="applyAutoSwapPlan">应用到换图方案</button>
           </div>
           <button class="app-modal-close" aria-label="关闭商品图片窗口" @click="quickCreativeOpen=false">×</button>
         </div>
         <div class="app-modal-body">
-          <div class="creative-toolbar" v-if="creativeDates.length">
+          <div class="product-summary-strip" v-if="creativeProduct">
+            <div><span>商品</span><strong>{{creativeProduct.product_title||creativeProduct.product_id}}</strong></div>
+            <div><span>曝光</span><strong>{{fmtInt(selectedProductAggregate.total_impressions)}}</strong></div>
+            <div><span>点击</span><strong>{{fmtInt(selectedProductAggregate.total_clicks)}}</strong></div>
+            <div><span>点击率</span><strong>{{fmtPct(selectedProductAggregate.ctr)}}</strong></div>
+            <div><span>点击转化率</span><strong>{{fmtPct(selectedProductAggregate.conversion_rate)}}</strong></div>
+            <div><span>成交笔数</span><strong>{{fmtInt(selectedProductAggregate.total_orders)}}</strong></div>
+            <div><span>交易额</span><strong>¥{{fmtMoney(selectedProductAggregate.total_transaction)}}</strong></div>
+          </div>
+          <div class="creative-detail-toolbar">
             <label>图片日期</label>
-            <select v-model="creativeDate" @change="loadCreativeData()">
-              <option v-for="d in creativeDates" :key="d" :value="d">{{d}}</option>
-            </select>
-            <label>排序</label>
-            <select v-model="creativeSort">
-              <option value="impressions">曝光量</option><option value="clicks">点击量</option>
-              <option value="ctr">CTR</option><option value="conversion_rate">点击转化率</option>
-            </select>
+            <div class="creative-detail-date-buttons">
+              <button v-for="p in creativeDetailDatePresets" :key="p.key" :class="{active:creativeDetailDatePreset===p.key}" @click="applyCreativeDetailDatePreset(p.key)">{{p.label}}</button>
+            </div>
+            <span class="creative-detail-date-label">已选：{{creativeDetailDateLabel}}</span>
+            <div v-if="creativeDetailDatePreset==='custom'" class="creative-detail-date-custom">
+              <input type="date" v-model="creativeDetailDateFrom"><span>至</span><input type="date" v-model="creativeDetailDateTo">
+              <button @click="applyCreativeDetailCustomDate">查询</button>
+            </div>
           </div>
           <div v-if="creativeLoading" class="loading">正在加载图片...</div>
           <div v-else-if="!displayedCreativeRows.length" class="empty">该商品暂无图片数据。</div>
-          <div v-else class="modal-creative-grid">
-            <div class="creative-card" v-for="(c,i) in displayedCreativeRows" :key="c.image_key||c.image_url">
-              <img :src="c.image_url" loading="lazy" @error="e=>e.target.style.visibility='hidden'">
-              <div class="info">
-                <div><span class="creative-rank">{{i+1}}</span><strong>{{c.image_type||'未分类'}}</strong></div>
-                <div class="metrics">
-                  <div><span>曝光</span> <strong>{{fmtInt(c.impressions)}}</strong></div>
-                  <div><span>点击</span> <strong>{{fmtInt(c.clicks)}}</strong></div>
-                  <div><span>CTR</span> <strong>{{fmtPct(c.ctr)}}</strong></div>
-                  <div><span>点击转化率</span> <strong>{{fmtPct(c.conversion_rate)}}</strong></div>
-                </div>
-              </div>
-            </div>
+          <div v-else style="overflow:auto;max-height:61vh">
+            <table class="creative-detail-table">
+              <thead><tr><th>图片创意</th><th>图片类型</th><th>审核状态</th><th class="sortable-head" :class="{activeMetricHead:creativeSort==='impressions'}" @click="toggleCreativeSort('impressions')">曝光 <span class="table-sort-indicator">{{creativeSortIndicator('impressions')}}</span></th><th class="sortable-head" :class="{activeMetricHead:creativeSort==='clicks'}" @click="toggleCreativeSort('clicks')">点击 <span class="table-sort-indicator">{{creativeSortIndicator('clicks')}}</span></th><th class="sortable-head" :class="{activeMetricHead:creativeSort==='ctr'}" @click="toggleCreativeSort('ctr')">点击率 <span class="table-sort-indicator">{{creativeSortIndicator('ctr')}}</span></th><th class="sortable-head" :class="{activeMetricHead:creativeSort==='conversion_rate'}" @click="toggleCreativeSort('conversion_rate')">点击转化率 <span class="table-sort-indicator">{{creativeSortIndicator('conversion_rate')}}</span></th><th class="sortable-head" :class="{activeMetricHead:creativeSort==='order_count'}" @click="toggleCreativeSort('order_count')">成交笔数 <span class="table-sort-indicator">{{creativeSortIndicator('order_count')}}</span></th><th class="sortable-head" :class="{activeMetricHead:creativeSort==='transaction_amount'}" @click="toggleCreativeSort('transaction_amount')">交易额(元) <span class="table-sort-indicator">{{creativeSortIndicator('transaction_amount')}}</span></th><th class="sortable-head" :class="{activeMetricHead:creativeSort==='avg_order_amount'}" @click="toggleCreativeSort('avg_order_amount')">每笔成交金额(元) <span class="table-sort-indicator">{{creativeSortIndicator('avg_order_amount')}}</span></th></tr></thead>
+              <tbody>
+                <tr v-for="c in displayedCreativeRows" :key="c.image_key||c.image_url" :class="{'zero-data-row':!creativeHasData(c)}">
+                  <td><div class="creative-thumb-wrap"><img v-if="c.image_url" :src="c.image_url" loading="lazy" @error="e=>e.target.style.visibility='hidden'"><div v-else class="creative-image-placeholder">无图片地址</div><span v-if="!creativeHasData(c)">{{c.metrics_empty?'数据为空':'暂无数据'}}</span></div></td>
+                  <td>{{c.image_type||'未分类'}}</td>
+                  <td :class="String(c.status||'').includes('通过')?'status-pass':'status-reject'">● {{c.status||'未知'}}</td>
+                  <td>{{fmtInt(c.impressions)}}</td><td>{{fmtInt(c.clicks)}}</td><td>{{fmtPct(c.ctr)}}</td><td>{{fmtPct(c.conversion_rate)}}</td><td>{{fmtInt(c.order_count)}}</td><td>{{fmtMoney(c.transaction_amount)}}</td><td>{{fmtMoney(c.avg_order_amount)}}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -1305,6 +1293,7 @@ button[style*="var(--bg3)"]{display:none!important}
 <script>
 // ===== Global Chart.js datalabel plugin =====
 Chart.register({id:'datalabels',afterDatasetsDraw(chart){
+  if(chart.options?.plugins?.datalabels===false)return;
   const ctx=chart.ctx;
   chart.data.datasets.forEach((ds,di)=>{
     const meta=chart.getDatasetMeta(di);
@@ -1350,17 +1339,11 @@ createApp({
     // Nav
     const modules=[
       {id:'overview',label:'📊 观看概览'},
-      {id:'creative',label:'🎨 图片分析'},
-      {id:'trend',label:'📈 观看趋势'},
       {id:'swap',label:'🔄 换图工作台'}
     ];
     const current=ref('overview');
     const switchModule=(id)=>{current.value=id;nextTick(()=>{
       if(id==='overview')renderOverview();
-      if(id==='trend'){
-        if(trendData.value)renderTrends();
-        else loadTrends();
-      }
     });};
 
     // Data
@@ -1372,6 +1355,7 @@ createApp({
     const clearOverviewStores=()=>{overviewStores.value=[];overviewStore.value='';};
     const overviewDateOpen=ref(false);const overviewDatePreset=ref('all');const trendDateOpen=ref(false);const trendDatePreset=ref('all');
     const unifiedDatePresets=[{key:'today',label:'今天'},{key:'yesterday',label:'昨天'},{key:'7',label:'近7天'},{key:'15',label:'近15天'},{key:'30',label:'近30天'},{key:'week',label:'本周'},{key:'month',label:'本月'},{key:'all',label:'全部日期'},{key:'custom',label:'自定义'}];
+    const overviewVisibleDatePresets=unifiedDatePresets.filter(item=>item.key!=='all');
     const unifiedWeekdays=['日','一','二','三','四','五','六'];const unifiedCalendarCursor=ref(new Date());
     const unifiedCalendarMode=computed(()=>trendDateOpen.value?'trend':'overview');const unifiedCalendarVisible=computed(()=>overviewDateOpen.value||trendDateOpen.value);
     const unifiedCalendarFrom=computed(()=>unifiedCalendarMode.value==='trend'?trendDateFrom.value:overviewDateFrom.value);const unifiedCalendarTo=computed(()=>unifiedCalendarMode.value==='trend'?trendDateTo.value:overviewDateTo.value);
@@ -1385,7 +1369,7 @@ createApp({
     const unifiedDateLabel=(from,to)=>!from&&!to?'全部日期':from===to?from:`${from||'开始日期'} 至 ${to||'结束日期'}`;
     const overviewDateLabel=computed(()=>unifiedDateLabel(overviewDateFrom.value,overviewDateTo.value));
     const trendDateLabel=computed(()=>unifiedDateLabel(trendDateFrom.value,trendDateTo.value));
-    const applyOverviewDatePreset=(key)=>{overviewDatePreset.value=key;const n=new Date();const today=formatCreativeDate(n);let from='',to=today;if(key==='all'){to='';}else if(key==='today'){from=today;}else if(key==='yesterday'){const d=new Date(n);d.setDate(d.getDate()-1);from=to=formatCreativeDate(d);}else if(/^\d+$/.test(key)){const d=new Date(n);d.setDate(d.getDate()-(Number(key)-1));from=formatCreativeDate(d);}else if(key==='week'){const d=new Date(n);const day=d.getDay()||7;d.setDate(d.getDate()-day+1);from=formatCreativeDate(d);}else if(key==='month'){from=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`;}else if(key==='custom'){overviewDateOpen.value=true;return;}overviewDateFrom.value=from;overviewDateTo.value=to;overviewDateOpen.value=false;};
+    const applyOverviewDatePreset=(key)=>{overviewDatePreset.value=key;const n=new Date();const today=formatCreativeDate(n);let from='',to=today;if(key==='all'){to='';}else if(key==='today'){from=today;}else if(key==='yesterday'){const d=new Date(n);d.setDate(d.getDate()-1);from=to=formatCreativeDate(d);}else if(/^\d+$/.test(key)){const d=new Date(n);d.setDate(d.getDate()-(Number(key)-1));from=formatCreativeDate(d);}else if(key==='week'){const d=new Date(n);const day=d.getDay()||7;d.setDate(d.getDate()-day+1);from=formatCreativeDate(d);}else if(key==='month'){from=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`;}else if(key==='custom'){overviewDateFrom.value='';overviewDateTo.value='';unifiedCalendarCursor.value=new Date();overviewDateOpen.value=true;return;}overviewDateFrom.value=from;overviewDateTo.value=to;overviewDateOpen.value=false;};
     const applyTrendDatePreset=(key)=>{trendDatePreset.value=key;if(key==='all'){trendDateFrom.value='';trendDateTo.value='';trendQuickRange.value='all';}else if(key==='7'||key==='30'){applyTrendQuickRange(Number(key));}else{const n=new Date();const today=formatCreativeDate(n);let from=today,to=today;if(key==='yesterday'){const d=new Date(n);d.setDate(d.getDate()-1);from=to=formatCreativeDate(d);}else if(key==='week'){const d=new Date(n);const day=d.getDay()||7;d.setDate(d.getDate()-day+1);from=formatCreativeDate(d);}else if(key==='month'){from=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`;}trendDateFrom.value=from;trendDateTo.value=to;loadTrends();}trendDateOpen.value=false;};
     const productAggs=ref([]);
     // Helpers
@@ -1394,82 +1378,131 @@ createApp({
     const fmtPct=v=>{if(v==null||v===0)return '0%';return (v*100).toFixed(2)+'%';};
 
     const coreKpiMetrics=[
-      {key:'impressions',label:'总曝光',color:'#0891b2',hint:'图片被看到的总次数',format:s=>fmtInt(s.total_impressions)},
-      {key:'clicks',label:'总点击',color:'#0f766e',hint:'由图片带来的点击次数',format:s=>fmtInt(s.total_clicks)},
-      {key:'ctr',label:'整体 CTR',color:'#7c3aed',hint:'点击量 ÷ 曝光量',format:s=>fmtPct(s.overall_ctr)},
-      {key:'cvr',label:'点击转化率',color:'#d97706',hint:'订单量 ÷ 点击量',format:s=>fmtPct(s.overall_conversion)}
+      {key:'impressions',label:'曝光',hint:'图片被看到的总次数',format:s=>fmtInt(s.total_impressions)},
+      {key:'clicks',label:'点击',hint:'由图片带来的点击次数',format:s=>fmtInt(s.total_clicks)},
+      {key:'ctr',label:'点击率',hint:'点击量 ÷ 曝光量',format:s=>fmtPct(s.overall_ctr)},
+      {key:'cvr',label:'点击转化率',hint:'成交笔数 ÷ 点击量',format:s=>fmtPct(s.overall_conversion)},
+      {key:'orders',label:'成交笔数',hint:'筛选范围内的成交订单',format:s=>fmtInt(s.total_orders)},
+      {key:'transaction',label:'交易额',hint:'筛选范围内的成交金额',format:s=>'¥'+fmtMoney(s.total_transaction)}
     ];
 
     // ======= MODULE 0: Overview =======
-    const fetchSummary=async()=>{
-      console.log('fetchSummary called',overviewDateFrom.value,overviewDateTo.value,overviewStore.value);
-      let url=API+'/summary';
-      if(overviewDateFrom.value)url+='?date_from='+overviewDateFrom.value;
-      if(overviewDateTo.value)url+=(url.includes('?')?'&':'?')+'date_to='+overviewDateTo.value;
-      if(overviewStore.value)url+=(url.includes('?')?'&':'?')+'store='+encodeURIComponent(overviewStore.value);
-      const r=await fetch(url);summary.value=await r.json();
-      console.log('summary response',summary.value.total_impressions,summary.value.total_clicks);
-      const r2=await fetch(API+'/stores');stores.value=await r2.json();
-      const r3=await fetch(API+'/products');allProducts.value=await r3.json();
-      const r4=await fetch(API+'/products/aggregates');productAggs.value=await r4.json();
-      const dateListResponse=await fetch(API+'/dates');
-      if(dateListResponse.ok){const dateList=await dateListResponse.json();creativeDateOptions.value=Array.isArray(dateList)?[...dateList].sort((a,b)=>b.localeCompare(a)):[];}
-      if(!swapProducts.value.length)await loadSwapProducts();
-      if(!creativeProduct.value&&productAggs.value.length){
-        const top=[...productAggs.value].sort((a,b)=>(b.total_impressions||0)-(a.total_impressions||0))[0];
-        const product=allProducts.value.find(p=>p.product_id===top.product_id)||top;
-        creativeProduct.value=product;creativeSearch.value=product.product_id;
-        loadCreativeData();
+    const activeOverviewMetric=ref('impressions');
+    const activeOverviewMetricMeta=computed(()=>coreKpiMetrics.find(item=>item.key===activeOverviewMetric.value)||coreKpiMetrics[0]);
+    const overviewBrand=ref('');const overviewCodeSearch=ref('');const selectedOverviewStore=ref('');
+    const brandTrendData=ref({metric:'impressions',dates:[],series:[]});const overviewAnalysisLoading=ref(false);const overviewTrendLoading=ref(false);
+    const overviewTrendIsSingleDay=computed(()=>brandTrendData.value.dates.length===1);
+    const metricField=(key)=>({impressions:'total_impressions',clicks:'total_clicks',ctr:'ctr',cvr:'conversion_rate',orders:'total_orders',transaction:'total_transaction'}[key]||'total_impressions');
+    const formatProductMetric=(product,key)=>{const value=Number(product?.[metricField(key)])||0;if(key==='ctr'||key==='cvr')return fmtPct(value);if(key==='transaction')return '¥'+fmtMoney(value);return fmtInt(value);};
+    const scopeFilteredProducts=computed(()=>productAggs.value);
+    const overviewBrandOptions=computed(()=>[...new Set(scopeFilteredProducts.value.map(p=>p.brand||'未标注品牌'))].sort((a,b)=>a.localeCompare(b,'zh-CN')));
+    const overviewCodeOptions=computed(()=>[...new Set(scopeFilteredProducts.value.filter(p=>(!overviewBrand.value||(p.brand||'未标注品牌')===overviewBrand.value)&&(!selectedOverviewStore.value||p.store_name===selectedOverviewStore.value)).map(p=>p.product_code).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN')));
+    const overviewProductSortKey=ref('impressions');const overviewProductSortDirection=ref('desc');
+    const toggleOverviewProductSort=(key)=>{if(overviewProductSortKey.value===key)overviewProductSortDirection.value=overviewProductSortDirection.value==='desc'?'asc':'desc';else{overviewProductSortKey.value=key;overviewProductSortDirection.value='desc';}};
+    const overviewProductSortIndicator=(key)=>overviewProductSortKey.value!==key?'↕':overviewProductSortDirection.value==='desc'?'↓':'↑';
+    const filteredOverviewProducts=computed(()=>{
+      const code=(overviewCodeSearch.value||'').toLowerCase();
+      const field=metricField(overviewProductSortKey.value);const multiplier=overviewProductSortDirection.value==='desc'?-1:1;
+      return scopeFilteredProducts.value.filter(p=>(!overviewBrand.value||(p.brand||'未标注品牌')===overviewBrand.value)&&p.store_name===selectedOverviewStore.value&&(!code||(p.product_code||'').toLowerCase().includes(code)))
+        .sort((a,b)=>{const av=Number(a?.[field])||0;const bv=Number(b?.[field])||0;if(av!==bv)return(av-bv)*multiplier;return String(a?.product_id||'').localeCompare(String(b?.product_id||''));});
+    });
+    const buildOverviewParams=(includeMetric=false)=>{const q=new URLSearchParams();if(includeMetric)q.set('metric',activeOverviewMetric.value);if(overviewDateFrom.value)q.set('date_from',overviewDateFrom.value);if(overviewDateTo.value)q.set('date_to',overviewDateTo.value);if(overviewStore.value)q.set('store',overviewStore.value);if(overviewBrand.value){q.set('brand',overviewBrand.value);q.set('include_empty','true');}return q;};
+    const selectOverviewMetric=(key)=>{activeOverviewMetric.value=key;selectedOverviewStore.value='';overviewCodeSearch.value='';};
+    const selectOverviewStoreRow=(storeName)=>{selectedOverviewStore.value=storeName;overviewCodeSearch.value='';overviewProductSortKey.value=activeOverviewMetric.value;overviewProductSortDirection.value='desc';nextTick(()=>document.querySelector('.overview-products')?.scrollIntoView({behavior:'smooth',block:'start'}));};
+    const resetOverviewScope=()=>{overviewDateFrom.value='';overviewDateTo.value='';overviewDatePreset.value='all';overviewStores.value=[];overviewStore.value='';overviewBrand.value='';selectedOverviewStore.value='';overviewCodeSearch.value='';};
+    const fetchBrandTrends=async()=>{
+      overviewTrendLoading.value=true;
+      try{
+        const response=await fetch(API+'/brands/trends?'+buildOverviewParams(true).toString());
+        brandTrendData.value=response.ok?await response.json():{metric:activeOverviewMetric.value,dates:[],series:[]};
+      }catch(error){
+        console.error('加载品牌趋势失败',error);
+        brandTrendData.value={metric:activeOverviewMetric.value,dates:[],series:[]};
+      }finally{
+        overviewTrendLoading.value=false;
+        nextTick(()=>renderOverview());
       }
-      nextTick(()=>renderOverview());
     };
-    watch([overviewDateFrom,overviewDateTo,overviewStore],()=>{fetchSummary();});
+    const fetchSummary=async()=>{
+      overviewAnalysisLoading.value=true;
+      const summaryParams=buildOverviewParams(false);
+      const productParams=new URLSearchParams();productParams.set('include_empty','true');if(overviewDateFrom.value)productParams.set('date_from',overviewDateFrom.value);if(overviewDateTo.value)productParams.set('date_to',overviewDateTo.value);
+      try{
+        const [summaryResponse,storeMetricResponse,storesResponse,productsResponse,aggregateResponse,dateListResponse]=await Promise.all([
+          fetch(API+'/summary?'+summaryParams.toString()),fetch(API+'/stores/aggregates?'+summaryParams.toString()),fetch(API+'/stores'),fetch(API+'/products'),fetch(API+'/products/aggregates?'+productParams.toString()),fetch(API+'/dates')
+        ]);
+        summary.value=await summaryResponse.json();overviewStoreMetrics.value=storeMetricResponse.ok?await storeMetricResponse.json():[];stores.value=await storesResponse.json();allProducts.value=await productsResponse.json();productAggs.value=await aggregateResponse.json();
+        if(dateListResponse.ok){const dateList=await dateListResponse.json();creativeDateOptions.value=Array.isArray(dateList)?[...dateList].sort((a,b)=>b.localeCompare(a)):[];}
+        if(overviewBrand.value&&!overviewBrandOptions.value.includes(overviewBrand.value))overviewBrand.value='';
+        if(selectedOverviewStore.value&&!overviewStoreMetrics.value.some(row=>row.store_name===selectedOverviewStore.value))selectedOverviewStore.value='';
+        if(!swapProducts.value.length)await loadSwapProducts();
+        await fetchBrandTrends();
+      }finally{overviewAnalysisLoading.value=false;}
+    };
+    watch([overviewDateFrom,overviewDateTo,overviewBrand],()=>{selectedOverviewStore.value='';overviewCodeSearch.value='';fetchSummary();});
+    watch(activeOverviewMetric,()=>fetchBrandTrends());
 
     let overviewCharts={};
-    const overviewTopProducts=computed(()=>[...productAggs.value]
-      .sort((a,b)=>(b.total_impressions||0)-(a.total_impressions||0))
-      .slice(0,10));
-    const lowCtrWatchlist=computed(()=>overviewTopProducts.value
-      .filter(p=>(p.total_impressions||0)>0)
-      .sort((a,b)=>(a.ctr||0)-(b.ctr||0))
-      .slice(0,3));
-    const highCtrWatchlist=computed(()=>[...productAggs.value]
-      .filter(p=>(p.total_impressions||0)>=10000)
-      .sort((a,b)=>(b.ctr||0)-(a.ctr||0))
-      .slice(0,3));
-    const storeAggregates=computed(()=>{
-      const map=new Map();
-      for(const p of productAggs.value){
-        const name=p.store_name||'未命名店铺';
-        if(!map.has(name))map.set(name,{store_name:name,total_impressions:0,total_clicks:0,products:[]});
-        const s=map.get(name);s.total_impressions+=Number(p.total_impressions)||0;s.total_clicks+=Number(p.total_clicks)||0;s.products.push(p);
-      }
-      return [...map.values()].sort((a,b)=>b.total_impressions-a.total_impressions);
-    });
-    const topStores=computed(()=>storeAggregates.value.slice(0,10));
     const storeChartOpen=ref(false);const selectedStoreName=ref('');
-    const selectedStoreProducts=computed(()=>{const s=storeAggregates.value.find(x=>x.store_name===selectedStoreName.value);return s?[...s.products].sort((a,b)=>(b.total_impressions||0)-(a.total_impressions||0)):[];});
-    const openStoreProducts=(store)=>{selectedStoreName.value=store;storeChartOpen.value=true;};
+    const overviewStoreMetrics=ref([]);const overviewMetricModal=ref(null);const overviewMetricLoading=ref(false);
+    const overviewMetricFilterLabel=computed(()=>overviewDateLabel.value);
+    const overviewStoreSortKey=ref('impressions');const overviewStoreSortDirection=ref('desc');
+    const overviewStoreSortField=(key)=>({impressions:'total_impressions',clicks:'total_clicks',ctr:'ctr',cvr:'conversion_rate',orders:'total_orders',transaction:'total_transaction',products:'product_count'}[key]||'total_impressions');
+    const toggleOverviewStoreSort=(key)=>{if(overviewStoreSortKey.value===key)overviewStoreSortDirection.value=overviewStoreSortDirection.value==='desc'?'asc':'desc';else{overviewStoreSortKey.value=key;overviewStoreSortDirection.value='desc';}};
+    const overviewStoreSortIndicator=(key)=>overviewStoreSortKey.value!==key?'↕':overviewStoreSortDirection.value==='desc'?'↓':'↑';
+    const overviewMetricRows=computed(()=>{const field=overviewStoreSortField(overviewStoreSortKey.value);const multiplier=overviewStoreSortDirection.value==='desc'?-1:1;return [...overviewStoreMetrics.value].sort((a,b)=>{const av=Number(a?.[field])||0;const bv=Number(b?.[field])||0;if(av!==bv)return(av-bv)*multiplier;return String(a?.store_name||'').localeCompare(String(b?.store_name||''),'zh-CN');});});
+    const overviewMetricModalRows=computed(()=>{const key=overviewMetricModal.value?.key||activeOverviewMetric.value;const field=metricField(key);return [...overviewStoreMetrics.value].sort((a,b)=>(Number(b?.[field])||0)-(Number(a?.[field])||0));});
+    const formatOverviewMetricValue=(row,key)=>{const value=Number(row?.[metricField(key)])||0;if(key==='ctr'||key==='cvr')return fmtPct(value);if(key==='transaction')return '¥'+fmtMoney(value);return fmtInt(value);};
+    const closeOverviewMetric=()=>{overviewMetricModal.value=null;};const openOverviewMetric=selectOverviewMetric;
+    const storeAggregates=computed(()=>[]);const topStores=computed(()=>[]);const selectedStoreProducts=computed(()=>[]);const openStoreProducts=()=>{};
     const openProductImages=(p)=>{
       storeChartOpen.value=false;
-      const product=allProducts.value.find(item=>item.product_id===p.product_id)||p;
+      const product={...(allProducts.value.find(item=>item.product_id===p.product_id)||{}),...p};
       creativeProduct.value=product;creativeSearch.value=product.product_id;creativeDate.value='';
-      quickCreativeOpen.value=true;loadCreativeData();
+      quickCreativeOpen.value=true;initializeCreativeDetailDate();loadCreativeData();
     };
-    const productDisplayName=(p)=>{
-      const code=(p.product_code||'').trim();
-      const title=(p.product_title||'').trim();
-      if(code&&title)return `${code} · ${title.length>18?title.slice(0,18)+'…':title}`;
-      return title||code||p.product_id||'商品';
+    const selectedProductAggregate=computed(()=>productAggs.value.find(p=>p.product_id===creativeProduct.value?.product_id)||creativeProduct.value||{});
+    const overviewBrandColors={威王:'#2f6fed',浪奇:'#0f9f82',白牌:'#7a5af8',舒蕾:'#e47b18','未标注品牌':'#687182'};
+    const overviewBrandFallbackPalette=['#d94b64','#1583b8','#a15c19','#0b7a75','#c15383','#596780'];
+    const overviewBrandColor=(brand)=>{
+      const name=String(brand||'未标注品牌');
+      if(overviewBrandColors[name])return overviewBrandColors[name];
+      const hash=[...name].reduce((total,char)=>((total*31)+char.charCodeAt(0))>>>0,0);
+      return overviewBrandFallbackPalette[hash%overviewBrandFallbackPalette.length];
     };
-    const productChartLabel=(p)=>[p.product_code||p.product_id||'商品',(p.product_title||'').trim().slice(0,10)+(p.product_title&&p.product_title.length>10?'…':'')];
     const renderOverview=()=>{
-      Object.values(overviewCharts).forEach(c=>c.destroy());
-      if(!summary.value||!productAggs.value.length)return;
-      const top10=topStores.value;
-      overviewCharts.top=new Chart(document.getElementById('chartTopProducts'),{
-        type:'bar',data:{labels:top10.map(s=>s.store_name.length>12?s.store_name.slice(0,12)+'…':s.store_name),datasets:[{label:'店铺曝光量',data:top10.map(s=>s.total_impressions||0),backgroundColor:'#38bdf8'}]},
-        options:{responsive:true,maintainAspectRatio:false,onClick:(_,items)=>{if(items.length)openStoreProducts(top10[items[0].index].store_name);},plugins:{legend:{display:false},tooltip:{callbacks:{title:(items)=>top10[items[0].dataIndex].store_name,label:(item)=>`${fmtInt(top10[item.dataIndex].total_impressions)} 曝光 · ${top10[item.dataIndex].products.length} 个商品`}}},scales:{y:{ticks:{color:'#666680'},grid:{color:'#e0e0e0'}},x:{ticks:{color:'#666680',maxRotation:0,minRotation:0,font:{size:10}},grid:{display:false}}}}
+      Object.values(overviewCharts).forEach(chart=>chart?.destroy());overviewCharts={};
+      const canvas=document.getElementById('chartBrandTrend');
+      if(!canvas||!brandTrendData.value.series.length)return;
+      const percentMetric=['ctr','cvr'].includes(activeOverviewMetric.value);
+      const moneyMetric=activeOverviewMetric.value==='transaction';
+      const formatAxisValue=(value)=>{
+        const number=Number(value)||0;
+        if(percentMetric)return (number*100).toFixed(number<.1?1:0)+'%';
+        if(Math.abs(number)>=1000000)return (number/1000000).toFixed(1)+'M';
+        if(Math.abs(number)>=10000)return (number/10000).toFixed(1)+'万';
+        return Math.round(number).toLocaleString('zh-CN');
+      };
+      const formatTooltipValue=(value)=>{
+        const number=Number(value)||0;
+        if(percentMetric)return (number*100).toFixed(2)+'%';
+        if(moneyMetric)return '¥'+number.toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:2});
+        return number.toLocaleString('zh-CN',{maximumFractionDigits:2});
+      };
+      const singleDay=overviewTrendIsSingleDay.value;
+      const datasets=brandTrendData.value.series.map(series=>{
+        const color=overviewBrandColor(series.brand);
+        const common={label:series.brand,data:series.points.map(point=>point.value),borderColor:color,backgroundColor:color,borderWidth:2};
+        return singleDay?{...common,borderRadius:5,borderSkipped:false,maxBarThickness:72,categoryPercentage:.72,barPercentage:.78}:{...common,pointRadius:brandTrendData.value.dates.length>20?0:3,pointHoverRadius:5,tension:.25,fill:false};
+      });
+      overviewCharts.brand=new Chart(canvas,{
+        type:singleDay?'bar':'line',
+        data:{labels:brandTrendData.value.dates,datasets},
+        options:{
+          responsive:true,maintainAspectRatio:false,interaction:{mode:singleDay?'nearest':'index',intersect:false},
+          plugins:{datalabels:false,legend:{display:brandTrendData.value.series.length>1,position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:18,color:'#475467'}},tooltip:{callbacks:{label:context=>`${context.dataset.label}：${formatTooltipValue(context.parsed.y)}`}}},
+          scales:{x:{grid:{display:false},ticks:{color:'#667085',maxRotation:0,autoSkip:true,maxTicksLimit:12}},y:{beginAtZero:true,grid:{color:'#edf0f4'},ticks:{color:'#667085',callback:formatAxisValue}}}
+        }
       });
     };
 
@@ -1483,7 +1516,12 @@ createApp({
     const formatCreativeDate=(d)=>{const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
     const creativeDateRangeLabel=computed(()=>{if(!creativeDateFrom.value&&!creativeDateTo.value)return '全部日期';if(creativeDateFrom.value===creativeDateTo.value)return creativeDateFrom.value;return `${creativeDateFrom.value||'开始日期'} 至 ${creativeDateTo.value||'结束日期'}`;});
     const creativeData=ref(null);const creativeLoading=ref(false);const creativeDate=ref('');const creativeDates=ref([]);
-    const creativeSort=ref('impressions');const creativeMinImpressions=ref(0);
+    const creativeSort=ref('impressions');const creativeSortDirection=ref('desc');const creativeMinImpressions=ref(0);
+    const creativeDetailDatePreset=ref('30');const creativeDetailDateFrom=ref('');const creativeDetailDateTo=ref('');
+    const creativeDetailDatePresets=[{key:'yesterday',label:'昨天'},{key:'7',label:'近7天'},{key:'15',label:'近15天'},{key:'30',label:'近30天'},{key:'custom',label:'自定义'}];
+    const creativeDetailDateLabel=computed(()=>{if(creativeDetailDateFrom.value===creativeDetailDateTo.value)return creativeDetailDateFrom.value||'未选择日期';return `${creativeDetailDateFrom.value||'开始日期'} 至 ${creativeDetailDateTo.value||'结束日期'}`;});
+    const toggleCreativeSort=(key)=>{if(creativeSort.value===key)creativeSortDirection.value=creativeSortDirection.value==='desc'?'asc':'desc';else{creativeSort.value=key;creativeSortDirection.value='desc';}};
+    const creativeSortIndicator=(key)=>creativeSort.value!==key?'↕':creativeSortDirection.value==='desc'?'↓':'↑';
     const quickCreativeOpen=ref(false);
     let creativeLoadVersion=0;
     const creativeImageKey=(url)=>{
@@ -1499,26 +1537,52 @@ createApp({
     const normalizeCreativeResponse=(data)=>{
       const response=data||{};
       const unique=new Map();
+      const numericFields=['impressions','clicks','transaction_amount','order_count','net_transaction','net_order_count'];
       for(const [index,row] of (response.creatives||[]).entries()){
         const imageKey=creativeImageKey(row.image_url)||`missing-image-${row.date||''}-${row.image_type||''}-${index}`;
-        const candidate={...row,image_key:imageKey};
         const current=unique.get(imageKey);
         if(!current){
-          unique.set(imageKey,candidate);
-          continue;
+          const initial={...row,image_key:imageKey,_bestScore:-1,_allMetricsEmpty:true};
+          numericFields.forEach(field=>initial[field]=0);
+          unique.set(imageKey,initial);
         }
-        const candidateScore=(Number(candidate.impressions)||0)+(Number(candidate.clicks)||0);
-        const currentScore=(Number(current.impressions)||0)+(Number(current.clicks)||0);
-        if(candidateScore>currentScore)unique.set(imageKey,candidate);
+        const aggregate=unique.get(imageKey);
+        aggregate._allMetricsEmpty=aggregate._allMetricsEmpty&&Boolean(row.metrics_empty);
+        numericFields.forEach(field=>aggregate[field]+=(Number(row[field])||0));
+        const rowScore=(Number(row.impressions)||0)+(Number(row.clicks)||0)+(Number(row.transaction_amount)||0);
+        if(rowScore>aggregate._bestScore){
+          aggregate._bestScore=rowScore;
+          aggregate.status=row.status||aggregate.status;
+          aggregate.image_type=row.image_type||aggregate.image_type;
+        }
+        if(['主轮播图','主图'].includes(row.image_type))aggregate.image_type='主轮播图';
       }
-      const creatives=[...unique.values()].sort((a,b)=>(Number(b.impressions)||0)-(Number(a.impressions)||0));
+      const typePriority=type=>({'主轮播图':0,'主图':0,'副轮播图':1,'轮播图':1,'SKU 图':2,'白底图':3}[type]??4);
+      const creatives=[...unique.values()].map(row=>{
+        const impressions=Number(row.impressions)||0,clicks=Number(row.clicks)||0,orders=Number(row.order_count)||0,transaction=Number(row.transaction_amount)||0;
+        return {...row,metrics_empty:row._allMetricsEmpty,ctr:impressions?clicks/impressions:0,conversion_rate:clicks?orders/clicks:0,avg_order_amount:orders?transaction/orders:0};
+      }).sort((a,b)=>typePriority(a.image_type)-typePriority(b.image_type)||(Number(b.impressions)||0)-(Number(a.impressions)||0));
+      if(creatives.length){
+        const mainIndex=creatives.findIndex(row=>['主轮播图','主图'].includes(row.image_type));
+        if(mainIndex>0)creatives.unshift(creatives.splice(mainIndex,1)[0]);
+        creatives[0].image_type='主轮播图';
+      }
+      creatives.forEach(row=>{delete row._bestScore;delete row._allMetricsEmpty;});
       return {...response,creatives,creative_count:creatives.length};
     };
+    const creativeHasData=row=>['impressions','clicks','transaction_amount','order_count'].some(field=>(Number(row?.[field])||0)>0);
     const displayedCreativeRows=computed(()=>{
       const rows=[...(creativeData.value?.creatives||[])].filter(row=>
         (Number(row.impressions)||0)>=creativeMinImpressions.value
       );
-      return rows.sort((a,b)=>(Number(b[creativeSort.value])||0)-(Number(a[creativeSort.value])||0));
+      return rows.sort((a,b)=>{
+        const aMain=['主轮播图','主图'].includes(a.image_type)?1:0;
+        const bMain=['主轮播图','主图'].includes(b.image_type)?1:0;
+        if(aMain!==bMain)return bMain-aMain;
+        const av=Number(a?.[creativeSort.value])||0;const bv=Number(b?.[creativeSort.value])||0;
+        if(av!==bv)return creativeSortDirection.value==='desc'?bv-av:av-bv;
+        return String(a.image_key||a.image_url||'').localeCompare(String(b.image_key||b.image_url||''));
+      });
     });
     const filteredCreativeProducts=computed(()=>{
       if(!creativeSearch.value)return allProducts.value.slice(0,20);
@@ -1527,37 +1591,33 @@ createApp({
     });
     const selectCreativeProduct=(p)=>{
       creativeProduct.value=p;creativeSearch.value=p.product_id;
-      creativeDate.value='';showCreativeDropdown.value=false;loadCreativeData();
+      creativeDate.value='';showCreativeDropdown.value=false;initializeCreativeDetailDate();loadCreativeData();
     };
+    const setCreativeDetailRange=(key)=>{const now=new Date();const end=new Date(now);end.setDate(end.getDate()-1);let start=new Date(end);if(key!=='yesterday')start.setDate(start.getDate()-(Number(key)-1));creativeDetailDateFrom.value=formatCreativeDate(start);creativeDetailDateTo.value=formatCreativeDate(end);};
+    const initializeCreativeDetailDate=()=>{creativeDetailDatePreset.value='30';setCreativeDetailRange('30');};
+    const applyCreativeDetailDatePreset=(key)=>{creativeDetailDatePreset.value=key;if(key==='custom')return;setCreativeDetailRange(key);loadCreativeData();};
+    const applyCreativeDetailCustomDate=()=>{if(creativeDetailDateFrom.value&&creativeDetailDateTo.value&&creativeDetailDateFrom.value>creativeDetailDateTo.value){const start=creativeDetailDateFrom.value;creativeDetailDateFrom.value=creativeDetailDateTo.value;creativeDetailDateTo.value=start;}loadCreativeData();};
     const loadCreativeData=async()=>{
       if(!creativeProduct.value)return;
       const requestVersion=++creativeLoadVersion;
       const productId=creativeProduct.value.product_id;
       creativeLoading.value=true;
-      let url=API+'/creatives?product_id='+productId;
-      if(creativeDate.value)url+='&date='+creativeDate.value;
+      let url=API+'/creatives?product_id='+productId+'&include_empty=true';
+      if(creativeDate.value)url+='&date='+encodeURIComponent(creativeDate.value);
+      else{
+        if(creativeDetailDateFrom.value)url+='&date_from='+encodeURIComponent(creativeDetailDateFrom.value);
+        if(creativeDetailDateTo.value)url+='&date_to='+encodeURIComponent(creativeDetailDateTo.value);
+      }
       const r=await fetch(url);
       const response=await r.json();
       if(requestVersion!==creativeLoadVersion)return;
-      if(!creativeDate.value&&response.available_dates&&response.available_dates.length){
-        creativeDates.value=response.available_dates;
-        // auto-select latest date
-        creativeDate.value=response.available_dates[response.available_dates.length-1];
-        // 仅渲染选中日期的数据，避免“全部日期”中的重复图片键污染 DOM
-        const selectedDate=creativeDate.value;
-        const r2=await fetch(API+'/creatives?product_id='+productId+'&date='+selectedDate);
-        const datedResponse=await r2.json();
-        if(requestVersion!==creativeLoadVersion)return;
-        creativeData.value=normalizeCreativeResponse(datedResponse);
-      }else{
-        creativeData.value=normalizeCreativeResponse(response);
-        creativeDates.value=response.available_dates||[];
-      }
+      creativeData.value=normalizeCreativeResponse(response);
+      creativeDates.value=response.available_dates||[];
       if(requestVersion!==creativeLoadVersion)return;
       creativeLoading.value=false;
     };
 
-    // 商品观看表现（合并在图片分析中）
+    // 商品图片明细（供概览页弹窗使用）
     const compareMetric=ref('total_impressions');const compareTop=ref(10);const compareSearch=ref('');
     const metricLabel=computed(()=>{
       const map={total_transaction:'总交易额',total_orders:'总订单数',total_impressions:'曝光量',total_clicks:'点击量',ctr:'CTR',conversion_rate:'点击转化率',creative_count:'创意数'};
@@ -1733,7 +1793,7 @@ createApp({
     const swapTargetImageModalOpen=ref(false);const swapTargetImageProduct=ref(null);
     const swapTargetImages=ref([]);const swapTargetImagesLoading=ref(false);
     const swapTargetSelections=ref({});
-    const swapPreview=ref(null);const swapStatus=ref(null);const swapExecuting=ref(false);
+    const swapPreview=ref(null);const swapStatus=ref(null);const swapExecuting=ref(false);const swapAutoPlan=ref(null);const swapAutoPlanning=ref(false);
     const swapQueue=ref([]);const swapQueueLoading=ref(false);
     const swapQueuedCount=ref(0);const swapCancellingJobs=ref([]);
     const SWAP_MEMORY_KEY='creative-testing-swap-selected-v1';
@@ -1925,7 +1985,7 @@ createApp({
     };
     const selectSwapSource=async(p)=>{
       swapSource.value=p;swapImageModalOpen.value=true;
-      swapPreview.value=null;swapStatus.value=null;
+      swapPreview.value=null;swapAutoPlan.value=null;swapStatus.value=null;
       swapSelectedImages.value=swapSelectedMemory.value
         .filter(item=>String(item.source_product_id)===String(p.product_id))
         .map(item=>item.image_url);
@@ -1968,7 +2028,7 @@ createApp({
         });
       }
       persistSwapMemory();
-      swapPreview.value=null;
+      swapPreview.value=null;swapAutoPlan.value=null;
     };
     const removeSwapMemoryItem=(item)=>{
       swapSelectedMemory.value=swapSelectedMemory.value.filter(x=>
@@ -1981,7 +2041,7 @@ createApp({
     };
     const clearSwapMemory=()=>{
       swapSelectedMemory.value=[];swapSelectedImages.value=[];
-      persistSwapMemory();swapPreview.value=null;
+      persistSwapMemory();swapPreview.value=null;swapAutoPlan.value=null;
     };
     const swapTargetSelectionCount=(productId)=>(swapTargetSelections.value[productId]||[]).length;
     const swapTargetSelectedCount=computed(()=>Object.values(swapTargetSelections.value)
@@ -2056,6 +2116,24 @@ createApp({
       });
       swapPreview.value=await r.json();
       swapStatus.value=null;
+    };
+    const autoPlanSwap=async()=>{
+      if(!swapSource.value||!swapSelectedImages.value.length)return;
+      swapAutoPlanning.value=true;swapStatus.value=null;swapAutoPlan.value=null;
+      try{
+        const r=await fetch(API+'/swap-image/auto-plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_product_id:swapSource.value.product_id,source_image_urls:swapSelectedImages.value})});
+        const result=await r.json();
+        if(!r.ok||!result.success)throw new Error(result.error||'自动匹配失败');
+        swapAutoPlan.value=result;
+      }catch(e){swapStatus.value={success:false,message:e.message};}
+      finally{swapAutoPlanning.value=false;}
+    };
+    const applyAutoSwapPlan=()=>{
+      if(!swapAutoPlan.value||!swapAutoPlan.value.target_count)return;
+      swapTargets.value=swapAutoPlan.value.targets.map(t=>({...t}));
+      swapTargetSelections.value={...swapAutoPlan.value.target_image_urls};
+      swapPreview.value=null;swapStatus.value={success:true,message:'已应用自动匹配结果，请预览并确认后提交'};
+      nextTick(()=>document.querySelector('.swap-actions')?.scrollIntoView({behavior:'smooth',block:'center'}));
     };
     const swapQueueStatusText=(task)=>{
       if(task.status==='queued'||task.status==='pending')return task.queue_position?'排队中 · 第 '+task.queue_position+' 位':'排队中';
@@ -2227,12 +2305,12 @@ createApp({
     document.addEventListener('click',(e)=>{if(!e.target.closest('.autocomplete')){showCreativeDropdown.value=false;showTrendDropdown.value=false;}if(!e.target.closest('.unified-date-picker')&&!e.target.closest('.unified-calendar-popover')){overviewDateOpen.value=false;trendDateOpen.value=false;creativeDatePopover.value=false;}if(!e.target.closest('.store-filter-picker'))overviewStoreOpen.value=false;if(!e.target.closest('.swap-date-picker'))swapDateOpen.value=false;});
 
     return{modules,current,switchModule,
-      summary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,overviewStores,overviewStoreOpen,overviewStoreSearch,filteredOverviewStores,overviewStoreLabel,toggleOverviewStore,clearOverviewStores,overviewDateOpen,overviewDatePreset,overviewDateLabel,trendDateOpen,trendDatePreset,trendDateLabel,unifiedDatePresets,applyOverviewDatePreset,applyTrendDatePreset,unifiedCalendarVisible,unifiedCalendarMonths,unifiedWeekdays,unifiedCalendarPreset,unifiedCalendarSelectionLabel,moveUnifiedCalendar,isUnifiedDateInRange,isUnifiedDateEdge,chooseUnifiedCalendarDay,applyUnifiedCalendarPreset,productAggs,displayProductAggs,coreKpiMetrics,overviewTopProducts,lowCtrWatchlist,highCtrWatchlist,storeAggregates,topStores,storeChartOpen,selectedStoreName,selectedStoreProducts,openStoreProducts,openProductImages,quickCreativeOpen,
+      summary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,overviewStores,overviewStoreOpen,overviewStoreSearch,filteredOverviewStores,overviewStoreLabel,toggleOverviewStore,clearOverviewStores,overviewDateOpen,overviewDatePreset,overviewDateLabel,trendDateOpen,trendDatePreset,trendDateLabel,unifiedDatePresets,overviewVisibleDatePresets,applyOverviewDatePreset,applyTrendDatePreset,unifiedCalendarMode,unifiedCalendarVisible,unifiedCalendarMonths,unifiedWeekdays,unifiedCalendarPreset,unifiedCalendarSelectionLabel,moveUnifiedCalendar,isUnifiedDateInRange,isUnifiedDateEdge,chooseUnifiedCalendarDay,applyUnifiedCalendarPreset,productAggs,displayProductAggs,coreKpiMetrics,activeOverviewMetric,activeOverviewMetricMeta,selectOverviewMetric,overviewBrand,overviewBrandOptions,overviewCodeSearch,overviewCodeOptions,selectedOverviewStore,selectOverviewStoreRow,filteredOverviewProducts,overviewProductSortKey,overviewProductSortDirection,toggleOverviewProductSort,overviewProductSortIndicator,brandTrendData,overviewTrendIsSingleDay,overviewAnalysisLoading,overviewTrendLoading,formatProductMetric,resetOverviewScope,storeAggregates,topStores,storeChartOpen,selectedStoreName,selectedStoreProducts,openStoreProducts,openProductImages,selectedProductAggregate,overviewStoreMetrics,overviewMetricModal,overviewMetricLoading,overviewMetricFilterLabel,overviewMetricRows,overviewMetricModalRows,overviewStoreSortKey,overviewStoreSortDirection,toggleOverviewStoreSort,overviewStoreSortIndicator,formatOverviewMetricValue,openOverviewMetric,closeOverviewMetric,quickCreativeOpen,
       fmtInt,fmtMoney,fmtPct,
-      creativeSearch,showCreativeDropdown,filteredCreativeProducts,selectCreativeProduct,creativeProduct,creativeData,creativeLoading,creativeDate,creativeDates,creativeSort,creativeMinImpressions,displayedCreativeRows,loadCreativeData,creativeCodeFilter,creativeBrandFilter,creativeStoreFilter,creativeBrandOptions,creativeStoreOptions,creativeDateFilter,creativeDateOptions,filteredCreativeProductAggs,pagedCreativeProductAggs,creativeDirectoryPage,creativeDirectoryPageSize,creativeDirectoryTotalPages,creativeDirectoryHasFilters,clearCreativeDirectoryFilters,loadProductAggregates,creativeDateFrom,creativeDateTo,creativeDatePopover,creativeDatePreset,creativeDatePresets,creativeDateRangeLabel,applyCreativeDatePreset,applyCreativeCustomDate,
+      creativeSearch,showCreativeDropdown,filteredCreativeProducts,selectCreativeProduct,creativeProduct,creativeData,creativeLoading,creativeDate,creativeDates,creativeSort,creativeSortDirection,toggleCreativeSort,creativeSortIndicator,creativeDetailDatePreset,creativeDetailDateFrom,creativeDetailDateTo,creativeDetailDatePresets,creativeDetailDateLabel,applyCreativeDetailDatePreset,applyCreativeDetailCustomDate,creativeMinImpressions,displayedCreativeRows,creativeHasData,loadCreativeData,creativeCodeFilter,creativeBrandFilter,creativeStoreFilter,creativeBrandOptions,creativeStoreOptions,creativeDateFilter,creativeDateOptions,filteredCreativeProductAggs,pagedCreativeProductAggs,creativeDirectoryPage,creativeDirectoryPageSize,creativeDirectoryTotalPages,creativeDirectoryHasFilters,clearCreativeDirectoryFilters,loadProductAggregates,creativeDateFrom,creativeDateTo,creativeDatePopover,creativeDatePreset,creativeDatePresets,creativeDateRangeLabel,applyCreativeDatePreset,applyCreativeCustomDate,
       compareMetric,compareTop,compareSearch,metricLabel,
       trendSearch,showTrendDropdown,trendProduct,trendMetric,trendMode,trendMultiIds,trendDateFrom,trendDateTo,trendQuickRange,trendData,topProducts,filteredTrendProducts,selectTrendProduct,toggleTrendMulti,loadTrends,trendMetricLabel,applyTrendQuickRange,
-      swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapOverLimit,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,executeSwap,
+      swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapAutoPlan,swapAutoPlanning,swapOverLimit,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,autoPlanSwap,applyAutoSwapPlan,executeSwap,
       swapQueue,swapQueueLoading,swapQueuedCount,swapCancellingJobs,swapQueueStatusText,formatSwapQueueTime,cancelSwapTask,
       swapTargetImageModalOpen,swapTargetImageProduct,swapTargetImages,swapTargetImagesLoading,swapTargetSelections,swapTargetSelectionCount,swapTargetSelectedCount,swapTargetBackendReady,swapServerQueueReady,swapTargetImageSelected,openSwapTargetImages,toggleSwapTargetImage,
       swapProducts,swapProductIdFilter,swapStoreFilter,swapBrandFilter,swapCodeFilter,swapStoreOptions,swapBrandOptions,filteredSwapProductRows,swapSourceLoading,swapImageModalOpen,swapSelectedMemory,removeSwapMemoryItem,clearSwapMemory,
