@@ -1003,6 +1003,8 @@ html,body{width:100%;height:100%;overflow:hidden}
           <div class="swap-panel-head">
             <div class="swap-panel-title">
               <h3>目标商品信息</h3>
+              <p class="swap-target-filter-note" v-if="swapSource">已按源商品编码 {{swapSource.product_code||'无编码'}} 筛选目标商品</p>
+              <p class="swap-target-filter-note" v-else>请先选择源商品，目标列表将按商品编码筛选</p>
               <span class="swap-count">显示 {{filteredSwapTargetRows.length}} · 已选 {{swapTargets.length}} 个</span>
             </div>
           </div>
@@ -1878,7 +1880,7 @@ createApp({
     };
     const swapStoreOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.store_name).filter(Boolean))].sort());
     const swapBrandOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.brand).filter(Boolean))].sort());
-    const filteredSwapProductRows=computed(()=>{
+    const filteredSwapRowsBase=computed(()=>{
       const idq=(swapProductIdFilter.value||'').trim().toLowerCase();
       const codeq=(swapCodeFilter.value||'').trim().toLowerCase();
       return swapProducts.value.filter(p=>{
@@ -1887,11 +1889,19 @@ createApp({
         const brandMatch=!swapBrandFilter.value||p.brand===swapBrandFilter.value;
         const codeMatch=!codeq||(p.product_code||'').toLowerCase().includes(codeq);
         return idMatch&&storeMatch&&brandMatch&&codeMatch;
-      }).slice(0,300);
+      });
     });
-    const filteredSwapTargetRows=computed(()=>filteredSwapProductRows.value.filter(p=>
-      !swapSource.value||p.product_id!==swapSource.value.product_id
-    ));
+    const filteredSwapProductRows=computed(()=>filteredSwapRowsBase.value.slice(0,300));
+    const filteredSwapTargetRows=computed(()=>{
+      const source=swapSource.value;
+      if(!source)return [];
+      const sourceCode=String(source.product_code||'').trim().toLowerCase();
+      if(!sourceCode)return [];
+      return filteredSwapRowsBase.value.filter(p=>
+        String(p.product_id)!==String(source.product_id)&&
+        String(p.product_code||'').trim().toLowerCase()===sourceCode
+      );
+    });
     const dedupeSwapImages=(images)=>{
       const byUrl=new Map();
       for(const image of images||[]){
@@ -2027,6 +2037,12 @@ createApp({
       await handleSwapDateChange();
     };
     const selectSwapSource=async(p)=>{
+      const previousCode=String(swapSource.value?.product_code||'').trim().toLowerCase();
+      const nextCode=String(p?.product_code||'').trim().toLowerCase();
+      if(previousCode!==nextCode){
+        swapTargets.value=[];
+        swapTargetSelections.value={};
+      }
       swapSource.value=p;swapImageModalOpen.value=true;
       swapPreview.value=null;swapAutoPlan.value=null;swapStatus.value=null;
       swapSelectedImages.value=swapSelectedMemory.value
