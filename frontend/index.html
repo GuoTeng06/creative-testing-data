@@ -658,7 +658,7 @@ button[style*="var(--bg3)"]{display:none!important}
 .overview-empty-chart{height:290px;display:flex;align-items:center;justify-content:center;color:#98a2b3;font-size:13px}
  .store-drill-section{margin-bottom:14px}.overview-store-table-wrap{overflow:auto;max-height:390px}.overview-store-table{width:100%;border-collapse:collapse;min-width:1120px;font-size:12px}.overview-store-table th{position:sticky;top:0;z-index:2;padding:11px 12px;background:#f7f8fa;color:#667085;font-weight:600;text-align:right;border-bottom:1px solid #e4e7ec;white-space:nowrap}.overview-store-table th:first-child{text-align:left}.overview-store-table th.sortable-head{cursor:pointer;user-select:none;transition:color .12s}.overview-store-table th.sortable-head:hover{color:#245bc5}.table-sort-indicator{display:inline-block;min-width:12px;margin-left:3px;color:#98a2b3;font-size:11px;font-weight:700}.overview-store-table th.sortable-head.activeMetricHead .table-sort-indicator{color:#245bc5}.overview-store-table td{padding:12px;text-align:right;color:#344054;border-bottom:1px solid #edf0f4;font-variant-numeric:tabular-nums;white-space:nowrap}.overview-store-table td:first-child{text-align:left}.overview-store-table tbody tr{cursor:pointer;transition:background .12s}.overview-store-table tbody tr:hover{background:#f4f7fd}.overview-store-table tbody tr.active{background:#eef4ff;box-shadow:inset 3px 0 #2f6fed}.store-rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-right:9px;border-radius:4px;background:#f2f4f7;color:#667085;font-weight:700}.overview-store-table tr.active .store-rank{background:#2f6fed;color:#fff}.store-drill-button{border:0;background:transparent;color:#245bc5;font-weight:700;cursor:pointer;padding:4px 0}
 .overview-products{background:#fff;border:1px solid #dfe4ec;border-radius:8px;overflow:hidden}
-.code-control{display:flex;align-items:center;gap:8px}.code-control label{font-size:12px;font-weight:700;color:#475467}.code-control input{width:230px}
+.code-control{display:flex;align-items:center;gap:8px}.code-control label{font-size:12px;font-weight:700;color:#475467}.code-control input{width:230px}.code-autocomplete{position:relative}.code-autocomplete input{padding-right:30px}.code-clear{position:absolute;right:6px;top:7px;width:20px;height:20px;border:0;border-radius:50%;background:#eef1f5;color:#667085;font-size:16px;line-height:18px;cursor:pointer}.code-clear:hover{background:#dfe5ee;color:#344054}.code-suggestions{position:absolute;z-index:20;top:calc(100% + 5px);left:0;width:100%;min-width:230px;max-height:252px;overflow:auto;padding:5px;background:#fff;border:1px solid #d0d5dd;border-radius:7px;box-shadow:0 10px 24px rgba(16,24,40,.14)}.code-suggestions button{display:block;width:100%;height:32px;padding:0 9px;border:0;border-radius:4px;background:transparent;color:#344054;text-align:left;font-size:12px;cursor:pointer}.code-suggestions button:hover{background:#eef4ff;color:#245bc5}.code-suggestions-more{display:block;padding:8px 9px 6px;border-top:1px solid #edf0f4;color:#98a2b3;font-size:11px;line-height:1.35}.code-suggestions-empty{padding:12px 10px;color:#98a2b3;font-size:12px}
 .overview-product-table-wrap{overflow:auto;max-height:510px}
 .overview-product-table{width:100%;border-collapse:collapse;min-width:1040px;font-size:12px}
 .overview-product-table th{position:sticky;top:0;z-index:2;background:#f7f8fa;color:#667085;font-weight:600;text-align:right;padding:11px 10px;border-bottom:1px solid #e4e7ec;white-space:nowrap}
@@ -693,7 +693,7 @@ html,body{width:100%;height:100%;overflow:hidden}
 </style>
 </head>
 <body>
-<div id="app" @click="swapDateOpen=false;overviewDateOpen=false;trendDateOpen=false;creativeDatePopover=false;overviewStoreOpen=false">
+<div id="app" @click="swapDateOpen=false;overviewDateOpen=false;trendDateOpen=false;creativeDatePopover=false;overviewStoreOpen=false;overviewCodeOpen=false">
   <!-- Nav -->
   <nav id="nav">
     <div class="logo">📊 测图看板</div>
@@ -784,8 +784,15 @@ html,body{width:100%;height:100%;overflow:hidden}
           </div>
           <div class="code-control">
             <label>商品编码</label>
-            <input v-model.trim="overviewCodeSearch" list="overview-code-options" placeholder="输入编码筛选…">
-            <datalist id="overview-code-options"><option v-for="code in overviewCodeOptions" :key="code" :value="code"></option></datalist>
+            <div class="code-autocomplete" @click.stop>
+              <input v-model.trim="overviewCodeSearch" placeholder="输入编码模糊筛选…" autocomplete="off" @focus="overviewCodeOpen=true" @input="overviewCodeOpen=true" @keydown.enter.prevent="overviewCodeOpen=false" @keydown.esc="overviewCodeOpen=false">
+              <button v-if="overviewCodeSearch" class="code-clear" type="button" aria-label="清空商品编码" @mousedown.prevent="clearOverviewCode">×</button>
+              <div v-if="overviewCodeOpen && overviewCodeSuggestions.length" class="code-suggestions" @mousedown.prevent>
+                <button v-for="code in overviewCodeSuggestions" :key="code" type="button" @mousedown.prevent="selectOverviewCode(code)">{{code}}</button>
+                <span v-if="overviewCodeMatchCount>overviewCodeSuggestions.length" class="code-suggestions-more">还有 {{overviewCodeMatchCount-overviewCodeSuggestions.length}} 个匹配结果，请继续输入</span>
+              </div>
+              <div v-else-if="overviewCodeOpen && overviewCodeSearch" class="code-suggestions code-suggestions-empty">没有匹配的商品编码</div>
+            </div>
             <span class="overview-product-count">{{filteredOverviewProducts.length}} 个商品</span>
           </div>
         </div>
@@ -1407,14 +1414,18 @@ createApp({
     // ======= MODULE 0: Overview =======
     const activeOverviewMetric=ref('impressions');
     const activeOverviewMetricMeta=computed(()=>coreKpiMetrics.find(item=>item.key===activeOverviewMetric.value)||coreKpiMetrics[0]);
-    const overviewBrand=ref('');const overviewCodeSearch=ref('');const selectedOverviewStore=ref('');
+    const overviewBrand=ref('');const overviewCodeSearch=ref('');const overviewCodeOpen=ref(false);const selectedOverviewStore=ref('');
     const brandTrendData=ref({metric:'impressions',dates:[],series:[]});const overviewAnalysisLoading=ref(false);const overviewTrendLoading=ref(false);const summaryLoadError=ref('');
     const overviewTrendIsSingleDay=computed(()=>brandTrendData.value.dates.length===1);
     const metricField=(key)=>({impressions:'total_impressions',clicks:'total_clicks',ctr:'ctr',cvr:'conversion_rate',orders:'total_orders',transaction:'total_transaction'}[key]||'total_impressions');
     const formatProductMetric=(product,key)=>{const value=Number(product?.[metricField(key)])||0;if(key==='ctr'||key==='cvr')return fmtPct(value);if(key==='transaction')return '¥'+fmtMoney(value);return fmtInt(value);};
     const scopeFilteredProducts=computed(()=>productAggs.value);
     const overviewBrandOptions=computed(()=>[...new Set(scopeFilteredProducts.value.map(p=>p.brand||'未标注品牌'))].sort((a,b)=>a.localeCompare(b,'zh-CN')));
-    const overviewCodeOptions=computed(()=>[...new Set(scopeFilteredProducts.value.filter(p=>(!overviewBrand.value||(p.brand||'未标注品牌')===overviewBrand.value)&&(!selectedOverviewStore.value||p.store_name===selectedOverviewStore.value)).map(p=>p.product_code).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN')));
+    const overviewCodeOptions=computed(()=>[...new Set(scopeFilteredProducts.value.filter(p=>(!overviewBrand.value||(p.brand||'未标注品牌')===overviewBrand.value)&&(!selectedOverviewStore.value||p.store_name===selectedOverviewStore.value)).map(p=>String(p.product_code||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN')));
+    const overviewCodeMatchCount=computed(()=>{const q=(overviewCodeSearch.value||'').toLowerCase();return q?overviewCodeOptions.value.filter(code=>code.toLowerCase().includes(q)).length:0;});
+    const overviewCodeSuggestions=computed(()=>{const q=(overviewCodeSearch.value||'').toLowerCase();return q?overviewCodeOptions.value.filter(code=>code.toLowerCase().includes(q)).slice(0,8):[];});
+    const selectOverviewCode=(code)=>{overviewCodeSearch.value=code;overviewCodeOpen.value=false;};
+    const clearOverviewCode=()=>{overviewCodeSearch.value='';overviewCodeOpen.value=false;};
     const overviewProductSortKey=ref('impressions');const overviewProductSortDirection=ref('desc');
     const toggleOverviewProductSort=(key)=>{if(overviewProductSortKey.value===key)overviewProductSortDirection.value=overviewProductSortDirection.value==='desc'?'asc':'desc';else{overviewProductSortKey.value=key;overviewProductSortDirection.value='desc';}};
     const overviewProductSortIndicator=(key)=>overviewProductSortKey.value!==key?'↕':overviewProductSortDirection.value==='desc'?'↓':'↑';
@@ -1425,9 +1436,9 @@ createApp({
         .sort((a,b)=>{const av=Number(a?.[field])||0;const bv=Number(b?.[field])||0;if(av!==bv)return(av-bv)*multiplier;return String(a?.product_id||'').localeCompare(String(b?.product_id||''));});
     });
     const buildOverviewParams=(includeMetric=false)=>{const q=new URLSearchParams();if(includeMetric)q.set('metric',activeOverviewMetric.value);if(overviewDateFrom.value)q.set('date_from',overviewDateFrom.value);if(overviewDateTo.value)q.set('date_to',overviewDateTo.value);if(overviewStore.value)q.set('store',overviewStore.value);if(overviewBrand.value){q.set('brand',overviewBrand.value);q.set('include_empty','true');}return q;};
-    const selectOverviewMetric=(key)=>{activeOverviewMetric.value=key;selectedOverviewStore.value='';overviewCodeSearch.value='';};
-    const selectOverviewStoreRow=(storeName)=>{selectedOverviewStore.value=storeName;overviewCodeSearch.value='';overviewProductSortKey.value=activeOverviewMetric.value;overviewProductSortDirection.value='desc';nextTick(()=>document.querySelector('.overview-products')?.scrollIntoView({behavior:'smooth',block:'start'}));};
-    const resetOverviewScope=()=>{overviewDateFrom.value='';overviewDateTo.value='';overviewDatePreset.value='all';overviewStores.value=[];overviewStore.value='';overviewBrand.value='';selectedOverviewStore.value='';overviewCodeSearch.value='';};
+    const selectOverviewMetric=(key)=>{activeOverviewMetric.value=key;selectedOverviewStore.value='';clearOverviewCode();};
+    const selectOverviewStoreRow=(storeName)=>{selectedOverviewStore.value=storeName;clearOverviewCode();overviewProductSortKey.value=activeOverviewMetric.value;overviewProductSortDirection.value='desc';nextTick(()=>document.querySelector('.overview-products')?.scrollIntoView({behavior:'smooth',block:'start'}));};
+    const resetOverviewScope=()=>{overviewDateFrom.value='';overviewDateTo.value='';overviewDatePreset.value='all';overviewStores.value=[];overviewStore.value='';overviewBrand.value='';selectedOverviewStore.value='';clearOverviewCode();};
     const fetchBrandTrends=async()=>{
       overviewTrendLoading.value=true;
       try{
@@ -1471,7 +1482,7 @@ createApp({
         summaryLoadError.value='数据加载失败，请点击重新加载';
       }finally{overviewAnalysisLoading.value=false;}
     };
-    watch([overviewDateFrom,overviewDateTo,overviewBrand],()=>{selectedOverviewStore.value='';overviewCodeSearch.value='';fetchSummary();});
+    watch([overviewDateFrom,overviewDateTo,overviewBrand],()=>{selectedOverviewStore.value='';clearOverviewCode();fetchSummary();});
     watch(activeOverviewMetric,()=>fetchBrandTrends());
 
     let overviewCharts={};
@@ -2337,7 +2348,7 @@ createApp({
     document.addEventListener('click',(e)=>{if(!e.target.closest('.autocomplete')){showCreativeDropdown.value=false;showTrendDropdown.value=false;}if(!e.target.closest('.unified-date-picker')&&!e.target.closest('.unified-calendar-popover')){overviewDateOpen.value=false;trendDateOpen.value=false;creativeDatePopover.value=false;}if(!e.target.closest('.store-filter-picker'))overviewStoreOpen.value=false;if(!e.target.closest('.swap-date-picker'))swapDateOpen.value=false;});
 
     return{modules,current,switchModule,
-      summary,summaryLoadError,fetchSummary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,overviewStores,overviewStoreOpen,overviewStoreSearch,filteredOverviewStores,overviewStoreLabel,toggleOverviewStore,clearOverviewStores,overviewDateOpen,overviewDatePreset,overviewDateLabel,trendDateOpen,trendDatePreset,trendDateLabel,unifiedDatePresets,overviewVisibleDatePresets,applyOverviewDatePreset,applyTrendDatePreset,unifiedCalendarMode,unifiedCalendarVisible,unifiedCalendarMonths,unifiedWeekdays,unifiedCalendarPreset,unifiedCalendarSelectionLabel,moveUnifiedCalendar,isUnifiedDateInRange,isUnifiedDateEdge,chooseUnifiedCalendarDay,applyUnifiedCalendarPreset,productAggs,displayProductAggs,coreKpiMetrics,activeOverviewMetric,activeOverviewMetricMeta,selectOverviewMetric,overviewBrand,overviewBrandOptions,overviewCodeSearch,overviewCodeOptions,selectedOverviewStore,selectOverviewStoreRow,filteredOverviewProducts,overviewProductSortKey,overviewProductSortDirection,toggleOverviewProductSort,overviewProductSortIndicator,brandTrendData,overviewTrendIsSingleDay,overviewAnalysisLoading,overviewTrendLoading,formatProductMetric,resetOverviewScope,storeAggregates,topStores,storeChartOpen,selectedStoreName,selectedStoreProducts,openStoreProducts,openProductImages,selectedProductAggregate,overviewStoreMetrics,overviewMetricModal,overviewMetricLoading,overviewMetricFilterLabel,overviewMetricRows,overviewMetricModalRows,overviewStoreSortKey,overviewStoreSortDirection,toggleOverviewStoreSort,overviewStoreSortIndicator,formatOverviewMetricValue,openOverviewMetric,closeOverviewMetric,quickCreativeOpen,
+      summary,summaryLoadError,fetchSummary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,overviewStores,overviewStoreOpen,overviewStoreSearch,filteredOverviewStores,overviewStoreLabel,toggleOverviewStore,clearOverviewStores,overviewDateOpen,overviewDatePreset,overviewDateLabel,trendDateOpen,trendDatePreset,trendDateLabel,unifiedDatePresets,overviewVisibleDatePresets,applyOverviewDatePreset,applyTrendDatePreset,unifiedCalendarMode,unifiedCalendarVisible,unifiedCalendarMonths,unifiedWeekdays,unifiedCalendarPreset,unifiedCalendarSelectionLabel,moveUnifiedCalendar,isUnifiedDateInRange,isUnifiedDateEdge,chooseUnifiedCalendarDay,applyUnifiedCalendarPreset,productAggs,displayProductAggs,coreKpiMetrics,activeOverviewMetric,activeOverviewMetricMeta,selectOverviewMetric,overviewBrand,overviewBrandOptions,overviewCodeSearch,overviewCodeOpen,overviewCodeOptions,overviewCodeMatchCount,overviewCodeSuggestions,selectOverviewCode,clearOverviewCode,selectedOverviewStore,selectOverviewStoreRow,filteredOverviewProducts,overviewProductSortKey,overviewProductSortDirection,toggleOverviewProductSort,overviewProductSortIndicator,brandTrendData,overviewTrendIsSingleDay,overviewAnalysisLoading,overviewTrendLoading,formatProductMetric,resetOverviewScope,storeAggregates,topStores,storeChartOpen,selectedStoreName,selectedStoreProducts,openStoreProducts,openProductImages,selectedProductAggregate,overviewStoreMetrics,overviewMetricModal,overviewMetricLoading,overviewMetricFilterLabel,overviewMetricRows,overviewMetricModalRows,overviewStoreSortKey,overviewStoreSortDirection,toggleOverviewStoreSort,overviewStoreSortIndicator,formatOverviewMetricValue,openOverviewMetric,closeOverviewMetric,quickCreativeOpen,
       fmtInt,fmtMoney,fmtPct,
       creativeSearch,showCreativeDropdown,filteredCreativeProducts,selectCreativeProduct,creativeProduct,creativeData,creativeLoading,creativeDate,creativeDates,creativeSort,creativeSortDirection,toggleCreativeSort,creativeSortIndicator,creativeDetailDatePreset,creativeDetailDateFrom,creativeDetailDateTo,creativeDetailDatePresets,creativeDetailDateLabel,applyCreativeDetailDatePreset,applyCreativeDetailCustomDate,creativeMinImpressions,displayedCreativeRows,creativeHasData,loadCreativeData,creativeCodeFilter,creativeBrandFilter,creativeStoreFilter,creativeBrandOptions,creativeStoreOptions,creativeDateFilter,creativeDateOptions,filteredCreativeProductAggs,pagedCreativeProductAggs,creativeDirectoryPage,creativeDirectoryPageSize,creativeDirectoryTotalPages,creativeDirectoryHasFilters,clearCreativeDirectoryFilters,loadProductAggregates,creativeDateFrom,creativeDateTo,creativeDatePopover,creativeDatePreset,creativeDatePresets,creativeDateRangeLabel,applyCreativeDatePreset,applyCreativeCustomDate,
       compareMetric,compareTop,compareSearch,metricLabel,
