@@ -675,6 +675,7 @@ button[style*="var(--bg3)"]{display:none!important}
 .creative-detail-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #e4e7ec;background:#fbfcfd}.creative-detail-toolbar label{font-size:12px;color:#475467;font-weight:600}.creative-detail-date-buttons{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.creative-detail-date-buttons button{height:30px;padding:0 11px;border:1px solid #d9dee7;border-radius:15px;background:#fff;color:#667085;font-size:12px;cursor:pointer}.creative-detail-date-buttons button:hover{border-color:#9bb8f3;color:#245bc5}.creative-detail-date-buttons button.active{border-color:#2f6fed;background:#2f6fed;color:#fff;font-weight:650}.creative-detail-date-custom{display:flex;align-items:center;gap:7px;width:100%;padding-top:8px}.creative-detail-date-custom input{height:32px;border:1px solid #d0d5dd;border-radius:5px;padding:0 8px;color:#344054}.creative-detail-date-custom button{height:32px;border:0;border-radius:5px;background:#2f6fed;color:#fff;padding:0 13px;font-weight:650;cursor:pointer}.creative-detail-date-label{margin-left:auto;color:#667085;font-size:11px}
 .creative-detail-table{width:100%;border-collapse:collapse;min-width:1240px;font-size:12px}.creative-detail-table th{position:sticky;top:0;z-index:2;background:#f5f6f8;color:#667085;padding:11px 12px;text-align:right;border-bottom:1px solid #dfe4ec;white-space:nowrap}.creative-detail-table th:first-child,.creative-detail-table th:nth-child(2),.creative-detail-table th:nth-child(3){text-align:left}.creative-detail-table th.sortable-head{cursor:pointer;user-select:none;transition:color .12s}.creative-detail-table th.sortable-head:hover{color:#245bc5}.creative-detail-table th.sortable-head.activeMetricHead .table-sort-indicator{color:#245bc5}.creative-detail-table td{padding:12px;text-align:right;border-bottom:1px solid #e9edf2;color:#344054;font-variant-numeric:tabular-nums}.creative-detail-table td:first-child,.creative-detail-table td:nth-child(2),.creative-detail-table td:nth-child(3){text-align:left}.creative-detail-table img{width:86px;height:86px;object-fit:cover;border:1px solid #e4e7ec;border-radius:5px;background:#f2f4f7}.creative-detail-table tbody tr:hover{background:#fafbfc}.status-pass{color:#067647}.status-reject{color:#d92d20}.metric-note{font-size:11px;color:#98a2b3}
 .creative-thumb-wrap{display:flex;align-items:center;gap:9px}.creative-thumb-wrap span{display:inline-flex;padding:3px 7px;border-radius:4px;background:#f2f4f7;color:#667085;font-size:11px;white-space:nowrap}.creative-image-placeholder{display:flex;align-items:center;justify-content:center;width:86px;height:86px;border:1px dashed #d0d5dd;border-radius:5px;background:#f8f9fb;color:#98a2b3;font-size:11px}.creative-detail-table .zero-data-row{background:#fcfcfd}.creative-detail-table .zero-data-row td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)){color:#98a2b3}
+.overview-data-state{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:18px 20px;border:1px solid #dfe4ec;border-radius:8px;background:#fff;color:#344054}.overview-data-state span{color:#667085;font-size:12px}.overview-data-state button{margin-left:auto;height:32px;padding:0 14px;border:0;border-radius:6px;background:#2f6fed;color:#fff;font-weight:650;cursor:pointer}
 
 /* Viewport layout: use the full browser canvas at every desktop resolution. */
 html,body{width:100%;height:100%;overflow:hidden}
@@ -731,6 +732,11 @@ html,body{width:100%;height:100%;overflow:hidden}
           <strong class="value">{{m.format(summary)}}</strong>
           <span class="hint">{{m.hint}}</span>
         </button>
+      </section>
+      <section v-else class="overview-data-state">
+        <strong>{{summaryLoadError||'正在连接数据库并加载看板数据…'}}</strong>
+        <span v-if="!summaryLoadError">首次加载可能需要 5–15 秒</span>
+        <button v-else @click="fetchSummary()">重新加载</button>
       </section>
 
       <section class="overview-analysis overview-trend-section">
@@ -1402,7 +1408,7 @@ createApp({
     const activeOverviewMetric=ref('impressions');
     const activeOverviewMetricMeta=computed(()=>coreKpiMetrics.find(item=>item.key===activeOverviewMetric.value)||coreKpiMetrics[0]);
     const overviewBrand=ref('');const overviewCodeSearch=ref('');const selectedOverviewStore=ref('');
-    const brandTrendData=ref({metric:'impressions',dates:[],series:[]});const overviewAnalysisLoading=ref(false);const overviewTrendLoading=ref(false);
+    const brandTrendData=ref({metric:'impressions',dates:[],series:[]});const overviewAnalysisLoading=ref(false);const overviewTrendLoading=ref(false);const summaryLoadError=ref('');
     const overviewTrendIsSingleDay=computed(()=>brandTrendData.value.dates.length===1);
     const metricField=(key)=>({impressions:'total_impressions',clicks:'total_clicks',ctr:'ctr',cvr:'conversion_rate',orders:'total_orders',transaction:'total_transaction'}[key]||'total_impressions');
     const formatProductMetric=(product,key)=>{const value=Number(product?.[metricField(key)])||0;if(key==='ctr'||key==='cvr')return fmtPct(value);if(key==='transaction')return '¥'+fmtMoney(value);return fmtInt(value);};
@@ -1435,20 +1441,34 @@ createApp({
         nextTick(()=>renderOverview());
       }
     };
-    const fetchSummary=async()=>{
+    const fetchSummary=async(retryCount=0)=>{
       overviewAnalysisLoading.value=true;
+      summaryLoadError.value='';
       const summaryParams=buildOverviewParams(false);
       const productParams=new URLSearchParams();productParams.set('include_empty','true');if(overviewDateFrom.value)productParams.set('date_from',overviewDateFrom.value);if(overviewDateTo.value)productParams.set('date_to',overviewDateTo.value);
       try{
-        const [summaryResponse,storeMetricResponse,storesResponse,productsResponse,aggregateResponse,dateListResponse]=await Promise.all([
-          fetch(API+'/summary?'+summaryParams.toString()),fetch(API+'/stores/aggregates?'+summaryParams.toString()),fetch(API+'/stores'),fetch(API+'/products'),fetch(API+'/products/aggregates?'+productParams.toString()),fetch(API+'/dates')
+        // Load summary first so the backend builds its database cache once. Starting all
+        // endpoints together on a cold container caused several parallel MySQL reads.
+        const summaryResponse=await fetch(API+'/summary?'+summaryParams.toString());
+        if(!summaryResponse.ok)throw new Error('核心数据接口返回 '+summaryResponse.status);
+        summary.value=await summaryResponse.json();
+        const [storeMetricResponse,storesResponse,productsResponse,aggregateResponse,dateListResponse]=await Promise.all([
+          fetch(API+'/stores/aggregates?'+summaryParams.toString()),fetch(API+'/stores'),fetch(API+'/products'),fetch(API+'/products/aggregates?'+productParams.toString()),fetch(API+'/dates')
         ]);
-        summary.value=await summaryResponse.json();overviewStoreMetrics.value=storeMetricResponse.ok?await storeMetricResponse.json():[];stores.value=await storesResponse.json();allProducts.value=await productsResponse.json();productAggs.value=await aggregateResponse.json();
+        if(!storeMetricResponse.ok||!storesResponse.ok||!productsResponse.ok||!aggregateResponse.ok)throw new Error('明细数据接口加载失败');
+        overviewStoreMetrics.value=await storeMetricResponse.json();stores.value=await storesResponse.json();allProducts.value=await productsResponse.json();productAggs.value=await aggregateResponse.json();
         if(dateListResponse.ok){const dateList=await dateListResponse.json();creativeDateOptions.value=Array.isArray(dateList)?[...dateList].sort((a,b)=>b.localeCompare(a)):[];}
         if(overviewBrand.value&&!overviewBrandOptions.value.includes(overviewBrand.value))overviewBrand.value='';
         if(selectedOverviewStore.value&&!overviewStoreMetrics.value.some(row=>row.store_name===selectedOverviewStore.value))selectedOverviewStore.value='';
         if(!swapProducts.value.length)await loadSwapProducts();
         await fetchBrandTrends();
+      }catch(error){
+        console.error('加载看板数据失败',error);
+        if(retryCount<2){
+          await new Promise(resolve=>setTimeout(resolve,1800*(retryCount+1)));
+          return fetchSummary(retryCount+1);
+        }
+        summaryLoadError.value='数据加载失败，请点击重新加载';
       }finally{overviewAnalysisLoading.value=false;}
     };
     watch([overviewDateFrom,overviewDateTo,overviewBrand],()=>{selectedOverviewStore.value='';overviewCodeSearch.value='';fetchSummary();});
@@ -2317,7 +2337,7 @@ createApp({
     document.addEventListener('click',(e)=>{if(!e.target.closest('.autocomplete')){showCreativeDropdown.value=false;showTrendDropdown.value=false;}if(!e.target.closest('.unified-date-picker')&&!e.target.closest('.unified-calendar-popover')){overviewDateOpen.value=false;trendDateOpen.value=false;creativeDatePopover.value=false;}if(!e.target.closest('.store-filter-picker'))overviewStoreOpen.value=false;if(!e.target.closest('.swap-date-picker'))swapDateOpen.value=false;});
 
     return{modules,current,switchModule,
-      summary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,overviewStores,overviewStoreOpen,overviewStoreSearch,filteredOverviewStores,overviewStoreLabel,toggleOverviewStore,clearOverviewStores,overviewDateOpen,overviewDatePreset,overviewDateLabel,trendDateOpen,trendDatePreset,trendDateLabel,unifiedDatePresets,overviewVisibleDatePresets,applyOverviewDatePreset,applyTrendDatePreset,unifiedCalendarMode,unifiedCalendarVisible,unifiedCalendarMonths,unifiedWeekdays,unifiedCalendarPreset,unifiedCalendarSelectionLabel,moveUnifiedCalendar,isUnifiedDateInRange,isUnifiedDateEdge,chooseUnifiedCalendarDay,applyUnifiedCalendarPreset,productAggs,displayProductAggs,coreKpiMetrics,activeOverviewMetric,activeOverviewMetricMeta,selectOverviewMetric,overviewBrand,overviewBrandOptions,overviewCodeSearch,overviewCodeOptions,selectedOverviewStore,selectOverviewStoreRow,filteredOverviewProducts,overviewProductSortKey,overviewProductSortDirection,toggleOverviewProductSort,overviewProductSortIndicator,brandTrendData,overviewTrendIsSingleDay,overviewAnalysisLoading,overviewTrendLoading,formatProductMetric,resetOverviewScope,storeAggregates,topStores,storeChartOpen,selectedStoreName,selectedStoreProducts,openStoreProducts,openProductImages,selectedProductAggregate,overviewStoreMetrics,overviewMetricModal,overviewMetricLoading,overviewMetricFilterLabel,overviewMetricRows,overviewMetricModalRows,overviewStoreSortKey,overviewStoreSortDirection,toggleOverviewStoreSort,overviewStoreSortIndicator,formatOverviewMetricValue,openOverviewMetric,closeOverviewMetric,quickCreativeOpen,
+      summary,summaryLoadError,fetchSummary,stores,allProducts,overviewDateFrom,overviewDateTo,overviewStore,overviewStores,overviewStoreOpen,overviewStoreSearch,filteredOverviewStores,overviewStoreLabel,toggleOverviewStore,clearOverviewStores,overviewDateOpen,overviewDatePreset,overviewDateLabel,trendDateOpen,trendDatePreset,trendDateLabel,unifiedDatePresets,overviewVisibleDatePresets,applyOverviewDatePreset,applyTrendDatePreset,unifiedCalendarMode,unifiedCalendarVisible,unifiedCalendarMonths,unifiedWeekdays,unifiedCalendarPreset,unifiedCalendarSelectionLabel,moveUnifiedCalendar,isUnifiedDateInRange,isUnifiedDateEdge,chooseUnifiedCalendarDay,applyUnifiedCalendarPreset,productAggs,displayProductAggs,coreKpiMetrics,activeOverviewMetric,activeOverviewMetricMeta,selectOverviewMetric,overviewBrand,overviewBrandOptions,overviewCodeSearch,overviewCodeOptions,selectedOverviewStore,selectOverviewStoreRow,filteredOverviewProducts,overviewProductSortKey,overviewProductSortDirection,toggleOverviewProductSort,overviewProductSortIndicator,brandTrendData,overviewTrendIsSingleDay,overviewAnalysisLoading,overviewTrendLoading,formatProductMetric,resetOverviewScope,storeAggregates,topStores,storeChartOpen,selectedStoreName,selectedStoreProducts,openStoreProducts,openProductImages,selectedProductAggregate,overviewStoreMetrics,overviewMetricModal,overviewMetricLoading,overviewMetricFilterLabel,overviewMetricRows,overviewMetricModalRows,overviewStoreSortKey,overviewStoreSortDirection,toggleOverviewStoreSort,overviewStoreSortIndicator,formatOverviewMetricValue,openOverviewMetric,closeOverviewMetric,quickCreativeOpen,
       fmtInt,fmtMoney,fmtPct,
       creativeSearch,showCreativeDropdown,filteredCreativeProducts,selectCreativeProduct,creativeProduct,creativeData,creativeLoading,creativeDate,creativeDates,creativeSort,creativeSortDirection,toggleCreativeSort,creativeSortIndicator,creativeDetailDatePreset,creativeDetailDateFrom,creativeDetailDateTo,creativeDetailDatePresets,creativeDetailDateLabel,applyCreativeDetailDatePreset,applyCreativeDetailCustomDate,creativeMinImpressions,displayedCreativeRows,creativeHasData,loadCreativeData,creativeCodeFilter,creativeBrandFilter,creativeStoreFilter,creativeBrandOptions,creativeStoreOptions,creativeDateFilter,creativeDateOptions,filteredCreativeProductAggs,pagedCreativeProductAggs,creativeDirectoryPage,creativeDirectoryPageSize,creativeDirectoryTotalPages,creativeDirectoryHasFilters,clearCreativeDirectoryFilters,loadProductAggregates,creativeDateFrom,creativeDateTo,creativeDatePopover,creativeDatePreset,creativeDatePresets,creativeDateRangeLabel,applyCreativeDatePreset,applyCreativeCustomDate,
       compareMetric,compareTop,compareSearch,metricLabel,
