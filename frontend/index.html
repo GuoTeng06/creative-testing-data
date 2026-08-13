@@ -1044,7 +1044,7 @@ html,body{width:100%;height:100%;overflow:hidden}
           </div>
           <div class="swap-memory-list">
             <div v-if="!swapSelectedMemory.length" class="swap-memory-empty">在源商品弹窗中勾选的图片会保存在这里，刷新页面也不会丢失</div>
-            <div class="swap-memory-card" v-for="item in swapSelectedMemory" :key="item.source_product_id+'|'+item.image_url">
+            <div class="swap-memory-card" v-for="item in swapSelectedMemory" :key="item.source_product_id+'|'+item.image_url" :class="{active:swapSource&&String(swapSource.product_id)===String(item.source_product_id)}" title="点击恢复源商品并按编码筛选目标商品" @click="activateSwapMemoryItem(item)">
               <button class="swap-memory-remove" @click="removeSwapMemoryItem(item)">✕</button>
               <img :src="item.image_url" @error="e=>e.target.style.visibility='hidden'">
               <small :title="item.source_product_id">{{item.source_product_id}}</small>
@@ -1876,6 +1876,7 @@ createApp({
         swapProducts.value=productAggs.value.map(p=>({...p,date:'',image_url:'',brand:p.brand||''}));
       }
     };
+    const normalizeSwapCode=(value)=>String(value??'').trim().toLowerCase().replace(/[\s\u3000]+/g,'');
     const swapStoreOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.store_name).filter(Boolean))].sort());
     const swapBrandOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.brand).filter(Boolean))].sort());
     const filteredSwapRowsBase=computed(()=>{
@@ -1893,11 +1894,11 @@ createApp({
     const filteredSwapTargetRows=computed(()=>{
       const source=swapSource.value;
       if(!source)return [];
-      const sourceCode=String(source.product_code||'').trim().toLowerCase();
+      const sourceCode=normalizeSwapCode(source.product_code);
       if(!sourceCode)return [];
       return filteredSwapRowsBase.value.filter(p=>
         String(p.product_id)!==String(source.product_id)&&
-        String(p.product_code||'').trim().toLowerCase()===sourceCode
+        normalizeSwapCode(p.product_code)===sourceCode
       );
     });
     const dedupeSwapImages=(images)=>{
@@ -2035,8 +2036,8 @@ createApp({
       await handleSwapDateChange();
     };
     const selectSwapSource=async(p)=>{
-      const previousCode=String(swapSource.value?.product_code||'').trim().toLowerCase();
-      const nextCode=String(p?.product_code||'').trim().toLowerCase();
+      const previousCode=normalizeSwapCode(swapSource.value?.product_code);
+      const nextCode=normalizeSwapCode(p?.product_code);
       if(previousCode!==nextCode){
         swapTargets.value=[];
         swapTargetSelections.value={};
@@ -2056,6 +2057,16 @@ createApp({
         swapStatus.value={success:false,message:'图片信息加载失败: '+e.message};
       }finally{
         swapSourceLoading.value=false;
+      }
+    };
+    const activateSwapMemoryItem=async(item)=>{
+      const product=swapProducts.value.find(p=>String(p.product_id)===String(item.source_product_id));
+      if(product){
+        await selectSwapSource(product);
+        const url=String(item.image_url||'');
+        if(url&&!swapSelectedImages.value.includes(url))swapSelectedImages.value.push(url);
+      }else{
+        swapStatus.value={success:false,message:'源商品尚未加载，请先刷新商品列表'};
       }
     };
     const toggleSwapImage=(img)=>{
@@ -2370,7 +2381,7 @@ createApp({
       swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapAutoPlan,swapAutoPlanning,swapOverLimit,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,autoPlanSwap,applyAutoSwapPlan,executeSwap,
       swapQueue,swapQueueLoading,swapQueuedCount,swapCancellingJobs,swapQueueStatusText,formatSwapQueueTime,cancelSwapTask,
       swapTargetImageModalOpen,swapTargetImageProduct,swapTargetImages,swapTargetImagesLoading,swapTargetSelections,swapTargetSelectionCount,swapTargetSelectedCount,swapTargetBackendReady,swapServerQueueReady,swapTargetImageSelected,openSwapTargetImages,toggleSwapTargetImage,
-      swapProducts,swapProductIdFilter,swapStoreFilter,swapBrandFilter,swapCodeFilter,swapStoreOptions,swapBrandOptions,filteredSwapProductRows,swapSourceLoading,swapImageModalOpen,swapSelectedMemory,removeSwapMemoryItem,clearSwapMemory,
+      swapProducts,swapProductIdFilter,swapStoreFilter,swapBrandFilter,swapCodeFilter,swapStoreOptions,swapBrandOptions,filteredSwapProductRows,swapSourceLoading,swapImageModalOpen,swapSelectedMemory,activateSwapMemoryItem,removeSwapMemoryItem,clearSwapMemory,
       filteredSwapTargetRows,
       swapDateFrom,swapDateTo,swapDateOpen,swapDateOptions,swapDatePreset,swapDatePresets,swapWeekdays,swapCalendarMonths,
       swapDateRangeLabel,swapDateSummaryLabel,swapDateSelectionLabel,moveSwapCalendar,isSwapDateInRange,isSwapDateEdge,
