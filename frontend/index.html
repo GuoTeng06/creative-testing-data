@@ -218,6 +218,7 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:9px;margin-top:13px}
 .swap-filters input,.swap-filters select{width:100%;background:#fff;color:var(--text);border:1px solid var(--bg4);border-radius:var(--radius-md);padding:8px 10px;font-size:12px}
 .swap-filters input:focus,.swap-filters select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.swap-store-search{position:relative;min-width:0}.swap-store-search input{padding-right:34px}.swap-store-search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:0;border-radius:5px;background:#eef1f5;color:#667085;font-size:16px;line-height:20px;cursor:pointer}.swap-store-search-clear:hover{background:#dfe5ee;color:#172033}
 .swap-date-picker{position:relative;min-width:0}
 .swap-date-trigger{width:100%;height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;color:var(--text);border:1px solid var(--bg4);border-radius:var(--radius-md);padding:0 10px;font-size:12px;white-space:nowrap;overflow:hidden}
 .swap-date-trigger.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
@@ -960,10 +961,10 @@ html,body{width:100%;height:100%;overflow:hidden}
           </div>
           <div class="swap-filters">
             <input v-model="swapProductIdFilter" placeholder="商品ID / 标题">
-            <select v-model="swapStoreFilter">
-              <option value="">全部店铺</option>
-              <option v-for="store in swapStoreOptions" :key="store" :value="store">{{store}}</option>
-            </select>
+            <div class="swap-store-search">
+              <input v-model.trim="swapStoreFilter" aria-label="模糊搜索店铺" placeholder="输入店铺名称模糊搜索…" autocomplete="off">
+              <button v-if="swapStoreFilter" class="swap-store-search-clear" type="button" aria-label="清空店铺搜索" @click="swapStoreFilter=''">×</button>
+            </div>
             <select v-model="swapBrandFilter">
               <option value="">全部品牌</option>
               <option v-for="brand in swapBrandOptions" :key="brand" :value="brand">{{brand}}</option>
@@ -2004,7 +2005,8 @@ createApp({
       const codeq=(swapCodeFilter.value||'').trim().toLowerCase();
       return swapProducts.value.filter(p=>{
         const idMatch=!idq||(p.product_id||'').toLowerCase().includes(idq)||(p.product_title||'').toLowerCase().includes(idq);
-        const storeMatch=!swapStoreFilter.value||p.store_name===swapStoreFilter.value;
+        const storeq=normalizeSwapCode(swapStoreFilter.value);
+        const storeMatch=!storeq||normalizeSwapCode(p.store_name).includes(storeq);
         const brandMatch=!swapBrandFilter.value||p.brand===swapBrandFilter.value;
         const codeMatch=!codeq||(p.product_code||'').toLowerCase().includes(codeq);
         return idMatch&&storeMatch&&brandMatch&&codeMatch;
