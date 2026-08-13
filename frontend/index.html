@@ -1044,8 +1044,8 @@ html,body{width:100%;height:100%;overflow:hidden}
           <div class="swap-panel-head">
             <div class="swap-panel-title">
               <h3>目标商品信息</h3>
-              <p class="swap-target-filter-note" v-if="swapSource">已按源商品编码 {{swapSource.product_code||'无编码'}} 筛选目标商品</p>
-              <p class="swap-target-filter-note" v-else>请先选择源商品，目标列表将按商品编码筛选</p>
+              <p class="swap-target-filter-note" v-if="swapSource&&swapSelectedImages.length">已按源商品编码 {{swapSource.product_code||'无编码'}} 筛选目标商品</p>
+              <p class="swap-target-filter-note" v-else>请先选择源商品图片，目标列表将按商品编码筛选</p>
               <span class="swap-count">显示 {{filteredSwapTargetRows.length}} · 已选 {{swapTargets.length}} 个</span>
             </div>
           </div>
@@ -1992,7 +1992,7 @@ createApp({
     const filteredSwapProductRows=computed(()=>filteredSwapRowsBase.value.slice(0,300));
     const filteredSwapTargetRows=computed(()=>{
       const source=swapSource.value;
-      if(!source)return [];
+      if(!source||!swapSelectedImages.value.length)return [];
       const sourceCode=normalizeSwapCode(source.product_code);
       if(!sourceCode)return [];
       return filteredSwapRowsBase.value.filter(p=>
@@ -2194,6 +2194,10 @@ createApp({
           conversion_rate:img.conversion_rate||0,
         });
       }
+      if(!swapSelectedImages.value.length){
+        swapTargets.value=[];
+        swapTargetSelections.value={};
+      }
       persistSwapMemory();
       swapPreview.value=null;swapAutoPlan.value=null;
     };
@@ -2203,11 +2207,18 @@ createApp({
       );
       if(swapSource.value&&String(swapSource.value.product_id)===String(item.source_product_id)){
         swapSelectedImages.value=swapSelectedImages.value.filter(url=>url!==item.image_url);
+        if(!swapSelectedImages.value.length){
+          swapSource.value=null;
+          swapTargets.value=[];
+          swapTargetSelections.value={};
+          swapAutoPlan.value=null;
+        }
       }
       persistSwapMemory();swapPreview.value=null;
     };
     const clearSwapMemory=()=>{
-      swapSelectedMemory.value=[];swapSelectedImages.value=[];
+      swapSelectedMemory.value=[];swapSelectedImages.value=[];swapSource.value=null;
+      swapTargets.value=[];swapTargetSelections.value={};
       persistSwapMemory();swapPreview.value=null;swapAutoPlan.value=null;
     };
     const swapTargetSelectionCount=(productId)=>(swapTargetSelections.value[productId]||[]).length;
