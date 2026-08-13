@@ -899,6 +899,123 @@ def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
     return {"tasks": items, "queued_count": len(queued)}
 
 
+@app.get("/api/swap-tasks/{job_id}")
+def api_swap_task_detail(job_id: str):
+    """Return the persisted source and target records for one swap task."""
+    try:
+        task = _read_task(job_id)
+    except ValueError:
+        return {"success": False, "error": "任务编号格式错误"}
+    if not task:
+        return {"success": False, "error": "任务不存在"}
+
+    command = task.get("command") or {}
+    source = command.get("source") or {}
+    targets = command.get("targets") or []
+
+    # Store and product-code values are also persisted in workbook_rows. Use
+    # them first so historical records remain readable even if the database is
+    # temporarily unavailable or a product has since changed.
+    rows_by_product = {}
+    workbook_rows = task.get("workbook_rows") or {}
+    if not workbook_rows:
+        excel_path = _task_excel_path(job_id)
+        if not os.path.exists(excel_path):
+            excel_path = _legacy_task_excel_path(task.get("excel_file", ""))
+        if excel_path and os.path.exists(excel_path):
+            try:
+                workbook_rows = read_swap_workbook(excel_path)
+            except Exception:
+                workbook_rows = {}
+    for sheet_rows in workbook_rows.values():
+        if not isinstance(sheet_rows, list):
+            continue
+        for row in sheet_rows:
+            if not isinstance(row, dict):
+                continue
+            product_id = str(row.get("product_id", ""))
+            if product_id and product_id not in rows_by_product:
+                rows_by_product[product_id] = row
+
+    source_product_id = str(source.get("product_id", ""))
+    source_sheet_rows = workbook_rows.get("主图数据") or []
+    if not source_product_id and source_sheet_rows:
+        source_product_id = str(source_sheet_rows[0].get("product_id", ""))
+    source_row = rows_by_product.get(source_product_id, {})
+    source_images = []
+    for image in source.get("images") or []:
+        if not isinstance(image, dict) or not image.get("image_url"):
+            continue
+        source_images.append({
+            "image_url": image.get("image_url", ""),
+            "image_type": image.get("image_type", ""),
+        })
+    if not source_images:
+        source_images = [
+            {"image_url": str(row.get("image_url", "")), "image_type": ""}
+            for row in source_sheet_rows
+            if isinstance(row, dict) and row.get("image_url")
+        ]
+
+    target_details = []
+    for target in targets:
+        if not isinstance(target, dict):
+            continue
+        product_id = str(target.get("product_id", ""))
+        row = rows_by_product.get(product_id, {})
+        target_details.append({
+            "product_id": product_id,
+            "product_code": str(target.get("product_code") or row.get("product_code") or ""),
+            "store_name": str(row.get("store_name", "")),
+            "images": [
+                {"image_url": str(image_url)}
+                for image_url in (target.get("replace_image_urls") or [])
+                if image_url
+            ],
+        })
+    if not target_details:
+        grouped_targets = {}
+        for row in workbook_rows.get("替换数据") or []:
+            if not isinstance(row, dict):
+                continue
+            product_id = str(row.get("product_id", ""))
+            if not product_id:
+                continue
+            detail = grouped_targets.setdefault(product_id, {
+                "product_id": product_id,
+                "product_code": str(row.get("product_code", "")),
+                "store_name": str(row.get("store_name", "")),
+                "images": [],
+            })
+            if row.get("image_url"):
+                detail["images"].append({"image_url": str(row.get("image_url"))})
+        target_details = list(grouped_targets.values())
+
+    status = task.get("status", "queued")
+    return {
+        "success": True,
+        "job_id": task.get("job_id", job_id),
+        "status": status,
+        "phase": task.get("phase", ""),
+        "created_at": task.get("created_at", ""),
+        "updated_at": task.get("updated_at", ""),
+        "claimed_at": task.get("claimed_at", ""),
+        "claimed_by": task.get("claimed_by", ""),
+        "operator": task.get("operator", ""),
+        "cancelable": status in {"queued", "pending"},
+        "source_count": len(source_images),
+        "target_count": len(target_details),
+        "source": {
+            "product_id": source_product_id,
+            "product_code": str(source.get("product_code") or source_row.get("product_code") or ""),
+            "store_name": str(source_row.get("store_name", "")),
+            "images": source_images,
+        },
+        "targets": target_details,
+        "error": task.get("error", ""),
+    }
+
+
 @app.post("/api/swap-tasks/{job_id}/cancel")
 def api_swap_task_cancel(job_id: str):
     """Cancel a task only while it is still waiting in the queue."""

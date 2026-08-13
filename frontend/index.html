@@ -265,7 +265,9 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-queue-head h3{font-size:14px;margin:0}
 .swap-queue-list{display:flex;flex-direction:column;gap:8px;max-height:258px;overflow-y:auto;padding-right:3px}
 .swap-queue-empty{display:flex;align-items:center;justify-content:center;min-height:104px;border:1px dashed var(--bg4);border-radius:8px;color:var(--text2);font-size:12px;text-align:center;padding:14px}
-.swap-queue-card{border:1px solid var(--bg4);border-radius:9px;padding:10px;background:#fff}
+.swap-queue-card{border:1px solid var(--bg4);border-radius:9px;padding:10px;background:#fff;cursor:pointer;transition:border-color .16s,box-shadow .16s,transform .16s}
+.swap-queue-card:hover{border-color:#93c5fd;box-shadow:0 6px 16px rgba(37,99,235,.08);transform:translateY(-1px)}
+.swap-queue-card:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 .swap-queue-card.waiting{border-color:#bfdbfe;background:#f8fbff}
 .swap-queue-card.failed{border-color:#fecaca;background:#fffafa}
 .swap-queue-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
@@ -277,8 +279,39 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-queue-status.failed,.swap-queue-status.stopped{background:#feecec;color:#c62828}
 .swap-queue-route{font-size:11px;line-height:1.5;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .swap-queue-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;color:var(--text2);font-size:10px}
+.swap-queue-actions{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.swap-queue-view{border:0;background:transparent;color:#2563eb;font-size:11px;font-weight:700;padding:2px 0;cursor:pointer}
+.swap-queue-view:hover{text-decoration:underline}
 .swap-queue-cancel{border:0;background:transparent;color:var(--red);font-size:11px;font-weight:600;padding:2px 0}
 .swap-queue-cancel:disabled{opacity:.45;cursor:not-allowed}
+.swap-task-detail-modal{width:min(1040px,calc(100vw - 48px))}
+.swap-task-detail-kicker{margin-bottom:5px;color:#2563eb;font-size:11px;font-weight:800;letter-spacing:.08em}
+.swap-task-detail-body{display:flex;flex-direction:column;gap:16px}
+.swap-task-detail-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #e5eaf1;border-radius:10px;background:#f8fafc;overflow:hidden}
+.swap-task-detail-stat{min-width:0;padding:12px 14px;border-right:1px solid #e5eaf1}
+.swap-task-detail-stat:last-child{border-right:0}
+.swap-task-detail-stat span{display:block;color:#667085;font-size:11px;margin-bottom:5px}
+.swap-task-detail-stat strong{display:block;color:#101828;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.swap-task-detail-section{border:1px solid #e5eaf1;border-radius:10px;background:#fff;overflow:hidden}
+.swap-task-detail-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid #eef1f5}
+.swap-task-detail-section-head h4{margin:0 0 4px;font-size:14px;color:#101828}
+.swap-task-detail-section-head p{margin:0;color:#667085;font-size:11px}
+.swap-task-detail-images{display:flex;flex-wrap:wrap;gap:10px;padding:12px 14px}
+.swap-task-detail-image{width:96px;margin:0}
+.swap-task-detail-image img{display:block;width:96px;height:80px;object-fit:cover;border:1px solid #dfe5ed;border-radius:8px;background:#f2f4f7}
+.swap-task-detail-image figcaption{margin-top:5px;color:#667085;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.swap-task-target-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 14px}
+.swap-task-target-record{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px;border:1px solid #e5eaf1;border-radius:9px;background:#fbfcfe}
+.swap-task-target-record h5{margin:0 0 4px;font-size:12px;color:#101828}
+.swap-task-target-record p{margin:0;color:#667085;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.swap-task-target-thumbs{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+.swap-task-target-thumbs img{width:50px;height:44px;object-fit:cover;border:1px solid #f5b84b;border-radius:6px;background:#f2f4f7}
+.swap-task-detail-empty{padding:34px 18px;text-align:center;color:#667085;font-size:12px}
+.swap-task-detail-error{padding:22px;border:1px solid #fecaca;border-radius:9px;background:#fff7f7;color:#b42318;text-align:center}
+.swap-task-detail-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-top:1px solid #eef1f5;background:#fbfcfe}
+.swap-task-detail-footer span{color:#667085;font-size:11px}
+.swap-task-detail-cancel{border:1px solid #fca5a5;border-radius:7px;background:#fff;color:#c62828;padding:7px 12px;font-size:12px;font-weight:700}
+.swap-task-detail-cancel:disabled{opacity:.5;cursor:not-allowed}
 .swap-targets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .swap-target-image-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin:10px 0 12px;padding:10px;background:var(--bg3);border-radius:8px;max-height:224px;overflow-y:auto}
 .swap-target-image-group{display:flex;min-width:0;flex-direction:column;align-items:center;gap:5px;padding:8px 5px 6px;border:1px solid var(--bg4);border-radius:8px;background:#fff}
@@ -694,7 +727,7 @@ html,body{width:100%;height:100%;overflow:hidden}
 .app-modal-backdrop{padding:20px}
 @media(max-width:1400px){.overview-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:900px){.overview-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-section-head{flex-direction:column}.brand-control,.code-control{width:100%}.brand-control select,.code-control input{flex:1}.overview-date-quick{width:100%}.overview-scope-summary{width:100%;margin-left:0}.product-summary-strip{grid-template-columns:1fr 1fr}}
-@media(max-width:780px){#main{width:calc(100vw - 68px)}.app-modal-backdrop{padding:8px}.product-detail-modal,.app-modal:not(.compact){width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}}
+@media(max-width:780px){#main{width:calc(100vw - 68px)}.app-modal-backdrop{padding:8px}.product-detail-modal,.app-modal:not(.compact){width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}.swap-task-detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.swap-task-detail-stat:nth-child(2){border-right:0}.swap-task-detail-stat:nth-child(-n+2){border-bottom:1px solid #e5eaf1}.swap-task-target-list{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1109,18 +1142,24 @@ html,body{width:100%;height:100%;overflow:hidden}
           <div v-else class="swap-queue-list">
             <article class="swap-queue-card"
                      v-for="task in swapQueue" :key="task.job_id"
-                     :class="{waiting:task.status==='queued'||task.status==='pending',failed:task.status==='failed'}">
+                     :class="{waiting:task.status==='queued'||task.status==='pending',failed:task.status==='failed'}"
+                     role="button" tabindex="0"
+                     @click="openSwapQueueDetail(task)"
+                     @keydown.enter.prevent="openSwapQueueDetail(task)">
               <div class="swap-queue-card-head">
                 <span class="swap-queue-id" :title="task.job_id">编码 {{task.source_product_code||task.source_product_id||'-'}}</span>
                 <span class="swap-queue-status" :class="task.status">{{swapQueueStatusText(task)}}</span>
               </div>
               <div class="swap-queue-meta">
                 <span>{{task.source_count}} 张源图 · {{task.target_count}} 个目标 · {{formatSwapQueueTime(task.created_at)}}</span>
-                <button v-if="task.cancelable" class="swap-queue-cancel"
-                        :disabled="swapCancellingJobs.includes(task.job_id)"
-                        @click="cancelSwapTask(task)">
-                  {{swapCancellingJobs.includes(task.job_id)?'取消中...':'取消任务'}}
-                </button>
+                <div class="swap-queue-actions">
+                  <button class="swap-queue-view" @click.stop="openSwapQueueDetail(task)">查看详情</button>
+                  <button v-if="task.cancelable" class="swap-queue-cancel"
+                          :disabled="swapCancellingJobs.includes(task.job_id)"
+                          @click.stop="cancelSwapTask(task)">
+                    {{swapCancellingJobs.includes(task.job_id)?'取消中...':'取消任务'}}
+                  </button>
+                </div>
               </div>
             </article>
           </div>
@@ -1198,6 +1237,78 @@ html,body{width:100%;height:100%;overflow:hidden}
                 </div>
               </div>
             </label>
+          </div>
+        </section>
+      </div>
+
+      <div v-if="swapQueueDetailOpen" class="app-modal-backdrop" @click.self="closeSwapQueueDetail">
+        <section class="app-modal swap-task-detail-modal" role="dialog" aria-modal="true" aria-labelledby="swap-task-detail-title">
+          <div class="app-modal-head">
+            <div>
+              <div class="swap-task-detail-kicker">换图任务记录</div>
+              <h3 id="swap-task-detail-title">编码 {{swapQueueDetail?.source?.product_code||swapQueueDetail?.source_product_code||'-'}}</h3>
+              <p>任务 {{swapQueueDetail?.job_id||'-'}} · 提交于 {{formatSwapQueueTime(swapQueueDetail?.created_at)}}</p>
+            </div>
+            <button class="app-modal-close" aria-label="关闭任务详情" @click="closeSwapQueueDetail">×</button>
+          </div>
+          <div v-if="swapQueueDetailLoading" class="loading">正在读取任务记录...</div>
+          <div v-else-if="swapQueueDetailError" class="app-modal-body">
+            <div class="swap-task-detail-error">{{swapQueueDetailError}}</div>
+          </div>
+          <div v-else-if="swapQueueDetail" class="app-modal-body swap-task-detail-body">
+            <div class="swap-task-detail-summary">
+              <div class="swap-task-detail-stat"><span>当前状态</span><strong>{{swapQueueStatusText(swapQueueDetail)}}</strong></div>
+              <div class="swap-task-detail-stat"><span>源图片</span><strong>{{swapQueueDetail.source_count||0}} 张</strong></div>
+              <div class="swap-task-detail-stat"><span>目标商品</span><strong>{{swapQueueDetail.target_count||0}} 个</strong></div>
+              <div class="swap-task-detail-stat"><span>接收电脑</span><strong>{{swapQueueDetail.claimed_by||(swapQueueDetail.cancelable?'等待接收':'—')}}</strong></div>
+            </div>
+
+            <section class="swap-task-detail-section">
+              <div class="swap-task-detail-section-head">
+                <div>
+                  <h4>源商品 · {{swapQueueDetail.source?.product_code||'-'}}</h4>
+                  <p>{{swapQueueDetail.source?.store_name||'店铺未记录'}} · 商品ID {{swapQueueDetail.source?.product_id||'-'}}</p>
+                </div>
+                <span class="swap-count">{{swapQueueDetail.source?.images?.length||0}} 张源图</span>
+              </div>
+              <div v-if="swapQueueDetail.source?.images?.length" class="swap-task-detail-images">
+                <figure class="swap-task-detail-image" v-for="(img,index) in swapQueueDetail.source.images" :key="img.image_url">
+                  <img :src="img.image_url" loading="lazy" @error="e=>e.target.style.visibility='hidden'">
+                  <figcaption>{{img.image_type||('源图 '+(index+1))}}</figcaption>
+                </figure>
+              </div>
+              <div v-else class="swap-task-detail-empty">该任务没有保存源图片记录</div>
+            </section>
+
+            <section class="swap-task-detail-section">
+              <div class="swap-task-detail-section-head">
+                <div>
+                  <h4>目标商品与待替换图片</h4>
+                  <p>按商品查看此次任务将替换的具体图片</p>
+                </div>
+                <span class="swap-count">{{swapQueueDetail.targets?.length||0}} 个目标</span>
+              </div>
+              <div v-if="swapQueueDetail.targets?.length" class="swap-task-target-list">
+                <article class="swap-task-target-record" v-for="target in swapQueueDetail.targets" :key="target.product_id">
+                  <div>
+                    <h5>{{target.product_code||'-'}} · {{target.product_id||'-'}}</h5>
+                    <p>{{target.store_name||'店铺未记录'}} · {{target.images?.length||0}} 张待替换图</p>
+                  </div>
+                  <div class="swap-task-target-thumbs">
+                    <img v-for="img in target.images" :key="img.image_url" :src="img.image_url" loading="lazy" @error="e=>e.target.style.visibility='hidden'">
+                  </div>
+                </article>
+              </div>
+              <div v-else class="swap-task-detail-empty">该任务没有保存目标商品记录</div>
+            </section>
+          </div>
+          <div v-if="swapQueueDetail&&!swapQueueDetailLoading" class="swap-task-detail-footer">
+            <span>任务记录会保留在队列中，接收或取消后仍可回看</span>
+            <button v-if="swapQueueDetail.cancelable" class="swap-task-detail-cancel"
+                    :disabled="swapCancellingJobs.includes(swapQueueDetail.job_id)"
+                    @click="cancelSwapTask(swapQueueDetail)">
+              {{swapCancellingJobs.includes(swapQueueDetail.job_id)?'取消中...':'取消此任务'}}
+            </button>
           </div>
         </section>
       </div>
@@ -1818,6 +1929,8 @@ createApp({
     const swapPreview=ref(null);const swapStatus=ref(null);const swapExecuting=ref(false);const swapAutoPlan=ref(null);const swapAutoPlanning=ref(false);
     const swapQueue=ref([]);const swapQueueLoading=ref(false);
     const swapQueuedCount=ref(0);const swapCancellingJobs=ref([]);
+    const swapQueueDetailOpen=ref(false);const swapQueueDetailLoading=ref(false);
+    const swapQueueDetail=ref(null);const swapQueueDetailError=ref('');
     const SWAP_MEMORY_KEY='creative-testing-swap-selected-v1';
     const loadSavedSwapMemory=()=>{
       try{
@@ -2227,6 +2340,29 @@ createApp({
         swapQueueLoading.value=false;
       }
     };
+    const closeSwapQueueDetail=()=>{
+      swapQueueDetailOpen.value=false;
+      swapQueueDetailLoading.value=false;
+      swapQueueDetailError.value='';
+    };
+    const openSwapQueueDetail=async(task)=>{
+      if(!task?.job_id)return;
+      swapQueueDetailOpen.value=true;
+      swapQueueDetailLoading.value=true;
+      swapQueueDetailError.value='';
+      swapQueueDetail.value={...task};
+      try{
+        const r=await fetch(API+'/swap-tasks/'+encodeURIComponent(task.job_id));
+        const result=await r.json();
+        if(!r.ok||!result.success)throw new Error(result.error||'任务记录读取失败');
+        const current=swapQueue.value.find(item=>item.job_id===task.job_id)||{};
+        swapQueueDetail.value={...current,...result};
+      }catch(e){
+        swapQueueDetailError.value=e.message||'任务记录读取失败';
+      }finally{
+        swapQueueDetailLoading.value=false;
+      }
+    };
     const cancelSwapTask=async(task)=>{
       if(!task||!task.cancelable||swapCancellingJobs.value.includes(task.job_id))return;
       swapCancellingJobs.value=[...swapCancellingJobs.value,task.job_id];
@@ -2236,6 +2372,9 @@ createApp({
         if(!r.ok||!result.success)throw new Error(result.error||'取消任务失败');
         swapStatus.value={success:true,message:'任务 '+task.job_id.slice(0,8)+' 已取消'};
         await loadSwapQueue(true);
+        if(swapQueueDetail.value?.job_id===task.job_id){
+          swapQueueDetail.value={...swapQueueDetail.value,status:'stopped',phase:'cancelled_by_user',cancelable:false};
+        }
       }catch(e){
         swapStatus.value={success:false,message:e.message};
         await loadSwapQueue(true);
@@ -2355,6 +2494,7 @@ createApp({
           quickCreativeOpen.value=false;
           swapImageModalOpen.value=false;
           swapTargetImageModalOpen.value=false;
+          closeSwapQueueDetail();
           swapDateOpen.value=false;
         }
       });
@@ -2374,6 +2514,7 @@ createApp({
       trendSearch,showTrendDropdown,trendProduct,trendMetric,trendMode,trendMultiIds,trendDateFrom,trendDateTo,trendQuickRange,trendData,topProducts,filteredTrendProducts,selectTrendProduct,toggleTrendMulti,loadTrends,trendMetricLabel,applyTrendQuickRange,
       swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapAutoPlan,swapAutoPlanning,swapOverLimit,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,autoPlanSwap,applyAutoSwapPlan,executeSwap,
       swapQueue,swapQueueLoading,swapQueuedCount,swapCancellingJobs,swapQueueStatusText,formatSwapQueueTime,cancelSwapTask,removeSwapTargetImage,
+      swapQueueDetailOpen,swapQueueDetailLoading,swapQueueDetail,swapQueueDetailError,openSwapQueueDetail,closeSwapQueueDetail,
       swapTargetImageModalOpen,swapTargetImageProduct,swapTargetImages,swapTargetImagesLoading,swapTargetSelections,swapTargetSelectionCount,swapTargetSelectedCount,swapTargetBackendReady,swapServerQueueReady,swapTargetImageSelected,openSwapTargetImages,toggleSwapTargetImage,
       swapProducts,swapProductIdFilter,swapStoreFilter,swapBrandFilter,swapCodeFilter,swapStoreOptions,swapBrandOptions,filteredSwapProductRows,swapSourceLoading,swapImageModalOpen,swapSelectedMemory,activateSwapMemoryItem,removeSwapMemoryItem,clearSwapMemory,
       filteredSwapTargetRows,
