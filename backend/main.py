@@ -67,10 +67,19 @@ def api_product_aggregates(
     date: str = Query(None),
     date_from: str = Query(None),
     date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
     include_empty: bool = Query(False),
 ):
     data = load_all_data(include_empty=include_empty)
-    return get_product_aggregates(data, date=date, date_from=date_from, date_to=date_to)
+    return get_product_aggregates(
+        data,
+        date=date,
+        date_from=date_from,
+        date_to=date_to,
+        store=store,
+        brand=brand,
+    )
 
 
 @app.get("/api/creatives")
@@ -393,8 +402,24 @@ def _request_identity(request: Request) -> dict:
 
 
 @app.get("/api/swap-image/products")
-def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
-    """换图工作台商品列表：可按外部日期或日期区间筛选，否则展示最近日期。"""
+def api_swap_products(
+    date: str = '',
+    date_from: str = '',
+    date_to: str = '',
+    product_query: str = '',
+    store: str = '',
+    brand: str = '',
+    product_code: str = '',
+    product_code_exact: str = '',
+    paged: bool = False,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(40, ge=10, le=500),
+):
+    """换图工作台商品列表。
+
+    默认保持旧版数组响应；前端传 ``paged=true`` 时启用服务端筛选与分页，
+    避免首次进入工作台就传输并渲染全部商品。
+    """
     data = load_all_data(include_empty=True)
     grouped = {}
     for record in data['records']:
@@ -445,7 +470,47 @@ def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
             'image_count': len({r.get('image_url') for r in records if r.get('image_url')}),
         })
 
-    return sorted(rows, key=lambda row: (row['date'], row['impressions']), reverse=True)
+    rows.sort(key=lambda row: (row['date'], row['impressions']), reverse=True)
+    if not paged:
+        return rows
+
+    def normalized(value):
+        return re.sub(r'[\s\u3000]+', '', str(value or '')).lower()
+
+    # 品牌选项基于当前日期范围生成，不受当前品牌筛选影响。
+    available_brands = sorted({str(row.get('brand') or '').strip() for row in rows if row.get('brand')})
+    product_query_norm = normalized(product_query)
+    store_norm = normalized(store)
+    code_norm = normalized(product_code)
+    exact_code_norm = normalized(product_code_exact)
+    filtered = []
+    for row in rows:
+        if product_query_norm and product_query_norm not in normalized(row.get('product_id')) \
+                and product_query_norm not in normalized(row.get('product_title')):
+            continue
+        if store_norm and store_norm not in normalized(row.get('store_name')):
+            continue
+        if brand and str(row.get('brand') or '') != brand:
+            continue
+        row_code = normalized(row.get('product_code'))
+        if exact_code_norm and row_code != exact_code_norm:
+            continue
+        if code_norm and code_norm not in row_code:
+            continue
+        filtered.append(row)
+
+    total = len(filtered)
+    pages = max(1, (total + page_size - 1) // page_size)
+    page = min(page, pages)
+    start = (page - 1) * page_size
+    return {
+        'items': filtered[start:start + page_size],
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+        'pages': pages,
+        'brands': available_brands,
+    }
 
 
 def _get_product_images(product_id, data):
