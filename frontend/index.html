@@ -254,7 +254,8 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-memory-card{width:82px;flex:0 0 82px;position:relative}
 .swap-memory-card img{width:82px;height:64px;object-fit:cover;border-radius:6px;border:2px solid var(--accent);display:block}
 .swap-memory-card small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:10px;margin-top:4px}
-.swap-memory-remove{position:absolute;right:-4px;top:-5px;width:19px;height:19px;border:0;border-radius:50%;background:var(--red);color:#fff;line-height:19px;padding:0;font-size:11px}
+.swap-memory-remove{position:absolute;right:-7px;top:-8px;width:24px;height:24px;border:2px solid #fff;border-radius:50%;background:var(--red);color:#fff;line-height:20px;padding:0;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 5px rgba(127,29,29,.28);z-index:2}
+.swap-memory-remove:hover{background:#dc2626;transform:scale(1.08)}
 .swap-memory-empty{display:flex;align-items:center;justify-content:center;width:100%;min-height:72px;border:1px dashed var(--bg4);border-radius:8px;color:var(--text2);font-size:12px}
 .swap-actions{padding:16px 18px}
 .swap-workflow-panel{margin-top:16px;display:grid;grid-template-columns:minmax(280px,.72fr) minmax(410px,1.08fr) minmax(310px,.8fr)}
@@ -279,12 +280,15 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-queue-cancel{border:0;background:transparent;color:var(--red);font-size:11px;font-weight:600;padding:2px 0}
 .swap-queue-cancel:disabled{opacity:.45;cursor:not-allowed}
 .swap-targets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.swap-target-image-summary{display:flex;flex-direction:column;gap:7px;margin:10px 0 12px;padding:10px;background:var(--bg3);border-radius:8px}
-.swap-target-image-group{display:flex;align-items:center;gap:8px;min-width:0}
-.swap-target-image-group strong{width:112px;flex:0 0 112px;font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.swap-target-thumb-list{display:flex;gap:5px;overflow-x:auto}
-.swap-target-thumb-list img{width:46px;height:38px;object-fit:cover;border-radius:5px;border:2px solid var(--orange);background:#fff}
-.swap-target-thumb{position:relative;display:inline-flex;flex:0 0 auto}.swap-target-thumb-remove{position:absolute;right:-5px;top:-7px;width:16px;height:16px;padding:0;border:0;border-radius:50%;background:#ef4444;color:#fff;font-size:12px;line-height:16px;cursor:pointer}
+.swap-target-image-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin:10px 0 12px;padding:10px;background:var(--bg3);border-radius:8px;max-height:224px;overflow-y:auto}
+.swap-target-image-group{display:flex;min-width:0;flex-direction:column;align-items:center;gap:5px;padding:8px 5px 6px;border:1px solid var(--bg4);border-radius:8px;background:#fff}
+.swap-target-image-group small{display:block;width:100%;font-size:10px;line-height:1.2;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}
+.swap-target-thumb-list{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;min-width:0}
+.swap-target-thumb-list img{width:54px;height:46px;object-fit:cover;border-radius:6px;border:2px solid var(--orange);background:#fff}
+.swap-target-thumb{position:relative;display:inline-flex;flex:0 0 auto}
+.swap-target-thumb-remove{position:absolute;right:-8px;top:-9px;width:23px;height:23px;padding:0;border:2px solid #fff;border-radius:50%;background:#ef4444;color:#fff;font-size:16px;font-weight:800;line-height:19px;text-align:center;cursor:pointer;box-shadow:0 2px 5px rgba(127,29,29,.28);z-index:2}
+.swap-target-thumb-remove:hover{background:#dc2626;transform:scale(1.08)}
+.swap-target-thumb-remove:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 .swap-action-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .swap-btn{border:0;border-radius:6px;padding:8px 14px;color:#fff;font-size:13px;font-weight:600}
 .swap-btn.primary{background:var(--accent)}
@@ -1062,13 +1066,13 @@ html,body{width:100%;height:100%;overflow:hidden}
           </div>
           <div class="swap-target-image-summary" v-if="swapTargets.length">
             <div class="swap-target-image-group" v-for="t in swapTargets" :key="t.product_id">
-              <strong :title="t.product_id">{{t.product_code||'-'}} · {{t.product_id}}</strong>
               <div class="swap-target-thumb-list">
                 <div class="swap-target-thumb" v-for="url in swapTargetSelections[t.product_id]" :key="url">
                   <img :src="url" @error="e=>e.target.style.visibility='hidden'">
-                  <button type="button" class="swap-target-thumb-remove" title="删除这张目标图" @click.stop="removeSwapTargetImage(t,url)">×</button>
+                  <button type="button" class="swap-target-thumb-remove" title="删除这张目标图" aria-label="删除这张目标图" @click.stop="removeSwapTargetImage(t,url)">×</button>
                 </div>
               </div>
+              <small :title="t.product_id">{{t.product_id}}</small>
             </div>
           </div>
           <div class="swap-action-row">
