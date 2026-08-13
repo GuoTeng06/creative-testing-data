@@ -302,14 +302,14 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-task-detail-section-head p{margin:0;color:#667085;font-size:11px}
 .swap-task-detail-images{display:flex;flex-wrap:wrap;gap:10px;padding:12px 14px}
 .swap-task-detail-image{width:96px;margin:0}
-.swap-task-detail-image img{display:block;width:96px;height:80px;object-fit:cover;border:1px solid #dfe5ed;border-radius:8px;background:#f2f4f7}
+.swap-task-detail-image img{display:block;width:96px;height:80px;object-fit:cover;border:1px solid #dfe5ed;border-radius:8px;background:#f2f4f7;cursor:zoom-in;transition:transform .15s,border-color .15s,box-shadow .15s}.swap-task-detail-image img:hover,.swap-task-detail-image img:focus-visible{transform:translateY(-2px);border-color:#2f6fed;box-shadow:0 5px 14px rgba(47,111,237,.18);outline:none}
 .swap-task-detail-image figcaption{margin-top:5px;color:#667085;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .swap-task-target-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 14px}
 .swap-task-target-record{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px;border:1px solid #e5eaf1;border-radius:9px;background:#fbfcfe}
 .swap-task-target-record h5{margin:0 0 4px;font-size:12px;color:#101828}
 .swap-task-target-record p{margin:0;color:#667085;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .swap-task-target-thumbs{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
-.swap-task-target-thumbs img{width:50px;height:44px;object-fit:cover;border:1px solid #f5b84b;border-radius:6px;background:#f2f4f7}
+.swap-task-target-thumbs img{width:50px;height:44px;object-fit:cover;border:1px solid #f5b84b;border-radius:6px;background:#f2f4f7;cursor:zoom-in;transition:transform .15s,border-color .15s,box-shadow .15s}.swap-task-target-thumbs img:hover,.swap-task-target-thumbs img:focus-visible{transform:scale(1.06);border-color:#2f6fed;box-shadow:0 4px 12px rgba(47,111,237,.2);outline:none}
 .swap-task-detail-empty{padding:34px 18px;text-align:center;color:#667085;font-size:12px}
 .swap-task-detail-error{padding:22px;border:1px solid #fecaca;border-radius:9px;background:#fff7f7;color:#b42318;text-align:center}
 .swap-task-detail-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-top:1px solid #eef1f5;background:#fbfcfe}
@@ -1289,7 +1289,7 @@ html,body{width:100%;height:100%;overflow:hidden}
               </div>
               <div v-if="swapQueueDetail.source?.images?.length" class="swap-task-detail-images">
                 <figure class="swap-task-detail-image" v-for="(img,index) in swapQueueDetail.source.images" :key="img.image_url">
-                  <img :src="img.image_url" loading="lazy" @error="e=>e.target.style.visibility='hidden'">
+                  <img :src="img.image_url" loading="lazy" tabindex="0" title="点击放大图片" :alt="img.image_type||('源图 '+(index+1))" @click="openImageLightbox(img.image_url)" @keydown.enter.prevent="openImageLightbox(img.image_url)" @error="e=>e.target.style.visibility='hidden'">
                   <figcaption>{{img.image_type||('源图 '+(index+1))}}</figcaption>
                 </figure>
               </div>
@@ -1311,7 +1311,7 @@ html,body{width:100%;height:100%;overflow:hidden}
                     <p>{{target.store_name||'店铺未记录'}} · {{target.images?.length||0}} 张待替换图</p>
                   </div>
                   <div class="swap-task-target-thumbs">
-                    <img v-for="img in target.images" :key="img.image_url" :src="img.image_url" loading="lazy" @error="e=>e.target.style.visibility='hidden'">
+                    <img v-for="(img,index) in target.images" :key="img.image_url" :src="img.image_url" loading="lazy" tabindex="0" title="点击放大图片" :alt="(target.product_code||'目标商品')+' 待替换图 '+(index+1)" @click="openImageLightbox(img.image_url)" @keydown.enter.prevent="openImageLightbox(img.image_url)" @error="e=>e.target.style.visibility='hidden'">
                   </div>
                 </article>
               </div>
