@@ -10,10 +10,10 @@ services:
       - ./frontend:/app/frontend:ro
       - ./swap_tasks:/app/swap_tasks
     environment:
-      MYSQL_HOST: 192.168.16.38
-      MYSQL_PORT: "3306"
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
-      MYSQL_DATABASE: creative testing data
+      MYSQL_HOST: "${MYSQL_HOST:-192.168.16.38}"
+      MYSQL_PORT: "${MYSQL_PORT:-3306}"
+      MYSQL_USER: "${MYSQL_USER:-root}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-root}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-creative testing data}"
       SWAP_TASK_DIR: /app/swap_tasks
     restart: unless-stopped
