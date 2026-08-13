@@ -284,6 +284,7 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-target-image-group strong{width:112px;flex:0 0 112px;font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .swap-target-thumb-list{display:flex;gap:5px;overflow-x:auto}
 .swap-target-thumb-list img{width:46px;height:38px;object-fit:cover;border-radius:5px;border:2px solid var(--orange);background:#fff}
+.swap-target-thumb{position:relative;display:inline-flex;flex:0 0 auto}.swap-target-thumb-remove{position:absolute;right:-5px;top:-7px;width:16px;height:16px;padding:0;border:0;border-radius:50%;background:#ef4444;color:#fff;font-size:12px;line-height:16px;cursor:pointer}
 .swap-action-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .swap-btn{border:0;border-radius:6px;padding:8px 14px;color:#fff;font-size:13px;font-weight:600}
 .swap-btn.primary{background:var(--accent)}
@@ -1056,17 +1057,17 @@ html,body{width:100%;height:100%;overflow:hidden}
             <h3>换图方案与执行</h3>
             <span class="swap-count">{{swapSelectedImages.length}} 张源图 → {{swapTargetSelectedCount}} 张目标图</span>
           </div>
-          <div class="swap-targets">
-            <span class="pill active" v-for="t in swapTargets" :key="t.product_id">
-              {{t.product_id}} · {{swapTargetSelectionCount(t.product_id)}} 张 <span style="margin-left:5px" @click="removeSwapTarget(t)">✕</span>
-            </span>
-            <span v-if="!swapTargets.length" class="tip">请点击上方目标商品，勾选需要被替换的图片</span>
+          <div class="swap-targets" v-if="!swapTargets.length">
+            <span class="tip">请点击上方目标商品，勾选需要被替换的图片</span>
           </div>
           <div class="swap-target-image-summary" v-if="swapTargets.length">
             <div class="swap-target-image-group" v-for="t in swapTargets" :key="t.product_id">
-              <strong :title="t.product_id">{{t.product_id}}</strong>
+              <strong :title="t.product_id">{{t.product_code||'-'}}</strong>
               <div class="swap-target-thumb-list">
-                <img v-for="url in swapTargetSelections[t.product_id]" :key="url" :src="url" @error="e=>e.target.style.visibility='hidden'">
+                <div class="swap-target-thumb" v-for="url in swapTargetSelections[t.product_id]" :key="url">
+                  <img :src="url" @error="e=>e.target.style.visibility='hidden'">
+                  <button type="button" class="swap-target-thumb-remove" title="删除这张目标图" @click="removeSwapTargetImage(t,url)">×</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1106,11 +1107,11 @@ html,body{width:100%;height:100%;overflow:hidden}
                      v-for="task in swapQueue" :key="task.job_id"
                      :class="{waiting:task.status==='queued'||task.status==='pending',failed:task.status==='failed'}">
               <div class="swap-queue-card-head">
-                <span class="swap-queue-id" :title="task.job_id">任务 {{task.job_id.slice(0,8)}}</span>
+                <span class="swap-queue-id" :title="task.job_id">编码 {{task.source_product_code||'-'}} → {{(task.target_product_codes||[]).join('、')||'-'}}</span>
                 <span class="swap-queue-status" :class="task.status">{{swapQueueStatusText(task)}}</span>
               </div>
               <div class="swap-queue-route" :title="task.source_product_id+' → '+task.target_product_ids.join('、')">
-                {{task.source_product_id||'-'}} → {{task.target_product_ids.join('、')||'-'}}
+                任务 {{task.job_id.slice(0,8)}} · {{task.source_product_id||'-'}} → {{task.target_product_ids.join('、')||'-'}}
               </div>
               <div class="swap-queue-meta">
                 <span>{{task.source_count}} 张源图 · {{task.target_count}} 个目标 · {{formatSwapQueueTime(task.created_at)}}</span>
@@ -2140,6 +2141,12 @@ createApp({
       const next={...swapTargetSelections.value};delete next[t.product_id];swapTargetSelections.value=next;
       swapPreview.value=null;
     };
+    const removeSwapTargetImage=(product,url)=>{
+      const current=[...(swapTargetSelections.value[product.product_id]||[])].filter(item=>item!==url);
+      const next={...swapTargetSelections.value};
+      if(current.length)next[product.product_id]=current;else{delete next[product.product_id];swapTargets.value=swapTargets.value.filter(t=>t.product_id!==product.product_id);}
+      swapTargetSelections.value=next;swapPreview.value=null;swapAutoPlan.value=null;
+    };
     const removeSwapTargetById=(id)=>{
       swapTargets.value=swapTargets.value.filter(x=>x.product_id!==id);
       const next={...swapTargetSelections.value};delete next[id];swapTargetSelections.value=next;
@@ -2211,7 +2218,7 @@ createApp({
         const r=await fetch(API+'/swap-tasks/queue?limit=30');
         if(!r.ok)throw new Error('任务队列接口不可用');
         const result=await r.json();
-        swapQueue.value=Array.isArray(result.tasks)?result.tasks:[];
+      swapQueue.value=Array.isArray(result.tasks)?result.tasks:[];
         swapQueuedCount.value=Number(result.queued_count||0);
       }catch(e){
         if(!silent)swapStatus.value={success:false,message:e.message};
@@ -2365,7 +2372,7 @@ createApp({
       compareMetric,compareTop,compareSearch,metricLabel,
       trendSearch,showTrendDropdown,trendProduct,trendMetric,trendMode,trendMultiIds,trendDateFrom,trendDateTo,trendQuickRange,trendData,topProducts,filteredTrendProducts,selectTrendProduct,toggleTrendMulti,loadTrends,trendMetricLabel,applyTrendQuickRange,
       swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapAutoPlan,swapAutoPlanning,swapOverLimit,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,autoPlanSwap,applyAutoSwapPlan,executeSwap,
-      swapQueue,swapQueueLoading,swapQueuedCount,swapCancellingJobs,swapQueueStatusText,formatSwapQueueTime,cancelSwapTask,
+      swapQueue,swapQueueLoading,swapQueuedCount,swapCancellingJobs,swapQueueStatusText,formatSwapQueueTime,cancelSwapTask,removeSwapTargetImage,
       swapTargetImageModalOpen,swapTargetImageProduct,swapTargetImages,swapTargetImagesLoading,swapTargetSelections,swapTargetSelectionCount,swapTargetSelectedCount,swapTargetBackendReady,swapServerQueueReady,swapTargetImageSelected,openSwapTargetImages,toggleSwapTargetImage,
       swapProducts,swapProductIdFilter,swapStoreFilter,swapBrandFilter,swapCodeFilter,swapStoreOptions,swapBrandOptions,filteredSwapProductRows,swapSourceLoading,swapImageModalOpen,swapSelectedMemory,activateSwapMemoryItem,removeSwapMemoryItem,clearSwapMemory,
       filteredSwapTargetRows,

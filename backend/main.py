@@ -865,10 +865,14 @@ def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
             "updated_at": task.get("updated_at", ""),
             "claimed_by": task.get("claimed_by", ""),
             "source_product_id": source.get("product_id", ""),
+            "source_product_code": source.get("product_code", ""),
             "source_count": task.get("source_count", 0),
             "target_count": len(targets),
             "target_product_ids": [
                 str(target.get("product_id", "")) for target in targets
+            ],
+            "target_product_codes": [
+                str(target.get("product_code", "")) for target in targets
             ],
             "queue_position": queue_positions.get(task["job_id"]),
             "cancelable": status in {"queued", "pending"},
