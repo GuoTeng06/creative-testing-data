@@ -373,7 +373,14 @@ def get_trends(product_id=None, metric='transaction_amount', data=None, date_fro
             for d, v in sorted(by_date.items())]
 
 
-def get_product_aggregates(data=None, date=None, date_from=None, date_to=None):
+def get_product_aggregates(
+    data=None,
+    date=None,
+    date_from=None,
+    date_to=None,
+    store=None,
+    brand=None,
+):
     if data is None:
         data = load_all_data()
 
@@ -386,6 +393,12 @@ def get_product_aggregates(data=None, date=None, date_from=None, date_to=None):
             records = [r for r in records if r.get('date', '') >= date_from]
         if date_to:
             records = [r for r in records if r.get('date', '') <= date_to]
+    if store:
+        stores = {value.strip() for value in str(store).split(',') if value.strip()}
+        records = [r for r in records if r.get('store_name', '') in stores]
+    if brand:
+        brands = {value.strip() for value in str(brand).split(',') if value.strip()}
+        records = [r for r in records if (r.get('brand') or '未标注品牌') in brands]
 
     products = {}
     for r in records:
