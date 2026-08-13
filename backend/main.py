@@ -673,13 +673,14 @@ def api_swap_execute(payload: dict):
                           or (img.get('clicks', 0) or 0) > 0
                           or (img.get('transaction_amount', 0) or 0) > 0])
         empty_slots = max(0, TOTAL_IMAGE_SLOTS - data_slots)
+        target_info = _get_product_info(tid, data)
         targets.append({
             "product_id": tid,
+            "product_code": target_info.get("product_code", ""),
             "empty_slots": empty_slots,
             "replace_image_urls": selected_urls,
             "replace_count": len(selected_urls),
         })
-        target_info = _get_product_info(tid, data)
         replacement_rows.extend({
             "store_name": target_info["store_name"],
             "product_id": tid,
@@ -693,6 +694,7 @@ def api_swap_execute(payload: dict):
         "operator": operator,
         "source": {
             "product_id": source_id,
+            "product_code": source_info.get("product_code", ""),
             "images": [{"image_url": img["image_url"], "image_type": img.get('image_type', '')}
                        for img in source_imgs],
         },
@@ -831,6 +833,13 @@ def api_swap_task_records(limit: int = Query(default=500, ge=1, le=2000)):
 @app.get("/api/swap-tasks/queue")
 def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
     """Return compact queue items for the swap workspace."""
+    # Older task records did not persist product codes; resolve them from the
+    # current dataset so the queue remains readable after the schema update.
+    try:
+        product_data = load_all_data(include_empty=True)
+    except Exception:
+        product_data = {"records": []}
+
     tasks = []
     with SWAP_TASK_LOCK:
         for filename in os.listdir(SWAP_TASK_DIR):
@@ -856,6 +865,17 @@ def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
         command = task.get("command") or {}
         source = command.get("source") or {}
         targets = command.get("targets") or []
+        source_product_id = str(source.get("product_id", ""))
+        source_product_code = source.get("product_code", "")
+        if not source_product_code and source_product_id:
+            source_product_code = _get_product_info(source_product_id, product_data).get("product_code", "")
+        target_product_codes = []
+        for target in targets:
+            target_id = str(target.get("product_id", ""))
+            target_code = target.get("product_code", "")
+            if not target_code and target_id:
+                target_code = _get_product_info(target_id, product_data).get("product_code", "")
+            target_product_codes.append(str(target_code))
         status = task.get("status", "queued")
         items.append({
             "job_id": task["job_id"],
@@ -864,16 +884,14 @@ def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
             "created_at": task.get("created_at", ""),
             "updated_at": task.get("updated_at", ""),
             "claimed_by": task.get("claimed_by", ""),
-            "source_product_id": source.get("product_id", ""),
-            "source_product_code": source.get("product_code", ""),
+            "source_product_id": source_product_id,
+            "source_product_code": source_product_code,
             "source_count": task.get("source_count", 0),
             "target_count": len(targets),
             "target_product_ids": [
                 str(target.get("product_id", "")) for target in targets
             ],
-            "target_product_codes": [
-                str(target.get("product_code", "")) for target in targets
-            ],
+            "target_product_codes": target_product_codes,
             "queue_position": queue_positions.get(task["job_id"]),
             "cancelable": status in {"queued", "pending"},
             "error": task.get("error", ""),

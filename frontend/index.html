@@ -1062,11 +1062,11 @@ html,body{width:100%;height:100%;overflow:hidden}
           </div>
           <div class="swap-target-image-summary" v-if="swapTargets.length">
             <div class="swap-target-image-group" v-for="t in swapTargets" :key="t.product_id">
-              <strong :title="t.product_id">{{t.product_code||'-'}}</strong>
+              <strong :title="t.product_id">{{t.product_code||'-'}} · {{t.product_id}}</strong>
               <div class="swap-target-thumb-list">
                 <div class="swap-target-thumb" v-for="url in swapTargetSelections[t.product_id]" :key="url">
                   <img :src="url" @error="e=>e.target.style.visibility='hidden'">
-                  <button type="button" class="swap-target-thumb-remove" title="删除这张目标图" @click="removeSwapTargetImage(t,url)">×</button>
+                  <button type="button" class="swap-target-thumb-remove" title="删除这张目标图" @click.stop="removeSwapTargetImage(t,url)">×</button>
                 </div>
               </div>
             </div>
@@ -1107,7 +1107,7 @@ html,body{width:100%;height:100%;overflow:hidden}
                      v-for="task in swapQueue" :key="task.job_id"
                      :class="{waiting:task.status==='queued'||task.status==='pending',failed:task.status==='failed'}">
               <div class="swap-queue-card-head">
-                <span class="swap-queue-id" :title="task.job_id">编码 {{task.source_product_code||'-'}} → {{(task.target_product_codes||[]).join('、')||'-'}}</span>
+                <span class="swap-queue-id" :title="task.job_id">编码 {{task.source_product_code||task.source_product_id||'-'}} → {{(task.target_product_codes||[]).some(Boolean) ? task.target_product_codes.filter(Boolean).join('、') : ((task.target_product_ids||[]).join('、')||'-')}}</span>
                 <span class="swap-queue-status" :class="task.status">{{swapQueueStatusText(task)}}</span>
               </div>
               <div class="swap-queue-route" :title="task.source_product_id+' → '+task.target_product_ids.join('、')">
