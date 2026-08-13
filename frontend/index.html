@@ -210,6 +210,10 @@ h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
 .swap-panel-head{padding:16px 18px;border-bottom:1px solid var(--bg3)}
 .swap-panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .swap-panel-title h3{font-size:15px;margin:0}
+.swap-plan-title-actions{display:flex;align-items:center;gap:8px}
+.swap-plan-clear{height:28px;padding:0 10px;border:1px solid #fecaca;border-radius:6px;background:#fff;color:#c62828;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s}
+.swap-plan-clear:hover{border-color:#f87171;background:#fff1f1}
+.swap-plan-clear:focus-visible{outline:2px solid #ef4444;outline-offset:2px}
 .swap-count{font-size:12px;color:var(--text2);background:var(--bg3);padding:4px 9px;border-radius:999px}
 .swap-filters{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:9px;margin-top:13px}
 .swap-filters input,.swap-filters select{width:100%;background:#fff;color:var(--text);border:1px solid var(--bg4);border-radius:var(--radius-md);padding:8px 10px;font-size:12px}
@@ -1092,7 +1096,10 @@ html,body{width:100%;height:100%;overflow:hidden}
         <div class="swap-actions">
           <div class="swap-panel-title" style="margin-bottom:10px">
             <h3>换图方案与执行</h3>
-            <span class="swap-count">{{swapSelectedImages.length}} 张源图 → {{swapTargetSelectedCount}} 张目标图</span>
+            <div class="swap-plan-title-actions">
+              <span class="swap-count">{{swapSelectedImages.length}} 张源图 → {{swapTargetSelectedCount}} 张目标图</span>
+              <button v-if="swapTargets.length" type="button" class="swap-plan-clear" @click="clearSwapPlan">一键删除全部</button>
+            </div>
           </div>
           <div class="swap-targets" v-if="!swapTargets.length">
             <span class="tip">请点击上方目标商品，勾选需要被替换的图片</span>
@@ -2261,6 +2268,17 @@ createApp({
       if(current.length)next[product.product_id]=current;else{delete next[product.product_id];swapTargets.value=swapTargets.value.filter(t=>t.product_id!==product.product_id);}
       swapTargetSelections.value=next;swapPreview.value=null;swapAutoPlan.value=null;
     };
+    const clearSwapPlan=()=>{
+      const removedCount=swapTargetSelectedCount.value;
+      swapTargets.value=[];
+      swapTargetSelections.value={};
+      swapPreview.value=null;
+      swapAutoPlan.value=null;
+      swapTargetImageModalOpen.value=false;
+      swapTargetImageProduct.value=null;
+      swapTargetImages.value=[];
+      swapStatus.value={success:true,message:'已一键删除 '+removedCount+' 张目标图，源图仍保留，可重新匹配'};
+    };
     const removeSwapTargetById=(id)=>{
       swapTargets.value=swapTargets.value.filter(x=>x.product_id!==id);
       const next={...swapTargetSelections.value};delete next[id];swapTargetSelections.value=next;
@@ -2513,7 +2531,7 @@ createApp({
       compareMetric,compareTop,compareSearch,metricLabel,
       trendSearch,showTrendDropdown,trendProduct,trendMetric,trendMode,trendMultiIds,trendDateFrom,trendDateTo,trendQuickRange,trendData,topProducts,filteredTrendProducts,selectTrendProduct,toggleTrendMulti,loadTrends,trendMetricLabel,applyTrendQuickRange,
       swapSource,swapSourceImages,swapSelectedImages,swapTargets,swapPreview,swapAutoPlan,swapAutoPlanning,swapOverLimit,swapStatus,swapExecuting,stopSwap,swapImageTypeColor,selectSwapSource,toggleSwapImage,selectSwapTarget,removeSwapTarget,removeSwapTargetById,previewSwap,autoPlanSwap,applyAutoSwapPlan,executeSwap,
-      swapQueue,swapQueueLoading,swapQueuedCount,swapCancellingJobs,swapQueueStatusText,formatSwapQueueTime,cancelSwapTask,removeSwapTargetImage,
+      swapQueue,swapQueueLoading,swapQueuedCount,swapCancellingJobs,swapQueueStatusText,formatSwapQueueTime,cancelSwapTask,removeSwapTargetImage,clearSwapPlan,
       swapQueueDetailOpen,swapQueueDetailLoading,swapQueueDetail,swapQueueDetailError,openSwapQueueDetail,closeSwapQueueDetail,
       swapTargetImageModalOpen,swapTargetImageProduct,swapTargetImages,swapTargetImagesLoading,swapTargetSelections,swapTargetSelectionCount,swapTargetSelectedCount,swapTargetBackendReady,swapServerQueueReady,swapTargetImageSelected,openSwapTargetImages,toggleSwapTargetImage,
       swapProducts,swapProductIdFilter,swapStoreFilter,swapBrandFilter,swapCodeFilter,swapStoreOptions,swapBrandOptions,filteredSwapProductRows,swapSourceLoading,swapImageModalOpen,swapSelectedMemory,activateSwapMemoryItem,removeSwapMemoryItem,clearSwapMemory,
