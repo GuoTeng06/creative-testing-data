@@ -1045,7 +1045,7 @@ html,body{width:100%;height:100%;overflow:hidden}
           <div class="swap-memory-list">
             <div v-if="!swapSelectedMemory.length" class="swap-memory-empty">在源商品弹窗中勾选的图片会保存在这里，刷新页面也不会丢失</div>
             <div class="swap-memory-card" v-for="item in swapSelectedMemory" :key="item.source_product_id+'|'+item.image_url" :class="{active:swapSource&&String(swapSource.product_id)===String(item.source_product_id)}" title="点击恢复源商品并按编码筛选目标商品" @click="activateSwapMemoryItem(item)">
-              <button class="swap-memory-remove" @click="removeSwapMemoryItem(item)">✕</button>
+              <button class="swap-memory-remove" @click.stop="removeSwapMemoryItem(item)">✕</button>
               <img :src="item.image_url" @error="e=>e.target.style.visibility='hidden'">
               <small :title="item.source_product_id">{{item.source_product_id}}</small>
             </div>
@@ -1075,11 +1075,9 @@ html,body{width:100%;height:100%;overflow:hidden}
                     :disabled="swapAutoPlanning||!swapSource||!swapSelectedImages.length">
               {{swapAutoPlanning?'匹配中...':'一键匹配零曝光图'}}
             </button>
-            <button class="swap-btn secondary" @click="previewSwap"
-                    :disabled="!swapSource||!swapTargets.length||!swapSelectedImages.length">预览方案</button>
             <button class="swap-btn primary" @click="executeSwap"
-                    :disabled="swapExecuting||!swapSource||!swapTargets.length||!swapSelectedImages.length||swapOverLimit||!swapPreview||!swapTargetBackendReady||!swapServerQueueReady">
-              {{swapExecuting?'提交中...':!swapPreview?'请先预览方案':!swapTargetBackendReady||!swapServerQueueReady?'请重启服务后执行':'提交换图任务'}}
+                    :disabled="swapExecuting||!swapSource||!swapTargets.length||!swapSelectedImages.length||swapOverLimit">
+              {{swapExecuting?'提交中...':'提交换图任务'}}
             </button>
             <button v-if="swapExecuting" class="swap-btn danger" @click="stopSwap">取消提交</button>
           </div>
@@ -1087,12 +1085,6 @@ html,body{width:100%;height:100%;overflow:hidden}
             <strong>换图方案：</strong>{{swapSelectedImages.length}} 张当前源图 → {{swapPreview.targets.length}} 个目标商品
             <div v-for="t in swapPreview.targets" :key="t.product_id">
               {{t.product_id}}：已选择 {{t.selected_count||swapTargetSelectionCount(t.product_id)}} 张待替换图片
-            </div>
-            <div v-if="!swapTargetBackendReady" style="color:var(--red);font-weight:700">
-              当前后台尚未加载“指定目标图”功能，请重启 Docker 容器后再执行。
-            </div>
-            <div v-if="swapTargetBackendReady&&!swapServerQueueReady" style="color:var(--red);font-weight:700">
-              当前后台尚未加载“服务器任务队列”功能，请重新创建 Docker 容器后再执行。
             </div>
             <div v-if="swapOverLimit" style="color:var(--red);font-weight:700">
               部分目标选择的待替换图片多于源图数量，请补充源图或减少目标图。
@@ -2267,7 +2259,7 @@ createApp({
       swapTargetImages.value=[];
     };
     const executeSwap=async()=>{
-      if(!swapSource.value||!swapTargets.value.length||!swapSelectedImages.value.length||swapOverLimit.value||!swapTargetBackendReady.value||!swapServerQueueReady.value)return;
+      if(!swapSource.value||!swapTargets.value.length||!swapSelectedImages.value.length||swapOverLimit.value)return;
       swapExecuting.value=true;swapStatus.value=null;
       swapAbortController=new AbortController();
       const submittedSourceId=swapSource.value.product_id;
