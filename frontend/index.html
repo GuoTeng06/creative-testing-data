@@ -1107,11 +1107,8 @@ html,body{width:100%;height:100%;overflow:hidden}
                      v-for="task in swapQueue" :key="task.job_id"
                      :class="{waiting:task.status==='queued'||task.status==='pending',failed:task.status==='failed'}">
               <div class="swap-queue-card-head">
-                <span class="swap-queue-id" :title="task.job_id">编码 {{task.source_product_code||task.source_product_id||'-'}} → {{(task.target_product_codes||[]).some(Boolean) ? task.target_product_codes.filter(Boolean).join('、') : ((task.target_product_ids||[]).join('、')||'-')}}</span>
+                <span class="swap-queue-id" :title="task.job_id">编码 {{task.source_product_code||task.source_product_id||'-'}}</span>
                 <span class="swap-queue-status" :class="task.status">{{swapQueueStatusText(task)}}</span>
-              </div>
-              <div class="swap-queue-route" :title="task.source_product_id+' → '+task.target_product_ids.join('、')">
-                任务 {{task.job_id.slice(0,8)}} · {{task.source_product_id||'-'}} → {{task.target_product_ids.join('、')||'-'}}
               </div>
               <div class="swap-queue-meta">
                 <span>{{task.source_count}} 张源图 · {{task.target_count}} 个目标 · {{formatSwapQueueTime(task.created_at)}}</span>
