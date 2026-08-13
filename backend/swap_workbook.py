@@ -10,8 +10,10 @@ SHEET_XML = {
     "主图数据": "xl/worksheets/sheet1.xml",
     "替换数据": "xl/worksheets/sheet2.xml",
 }
-FIELDS = ("store_name", "product_id", "image_url", "product_code", "operator")
-BODY_STYLES = ("14", "15", "16", "15", "15")
+FIELDS = ("store_name", "product_id", "image_url", "product_code", "operator", "operator_id")
+HEADERS = ("店铺名称", "商品ID", "图片地址", "商品编码", "操作人", "操作人ID")
+BODY_STYLES = ("14", "15", "16", "15", "15", "15")
+HEADER_STYLES = ("9", "10", "10", "10", "10", "11")
 XML_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS = {"x": XML_NS}
 ET.register_namespace("x", XML_NS)
@@ -24,6 +26,32 @@ def _replace_sheet_rows(xml_bytes, records):
         raise ValueError("Excel template is missing sheetData")
 
     rows = list(sheet_data.findall("x:row", NS))
+    if not rows:
+        raise ValueError("Excel template is missing the header row")
+
+    header_row = rows[0]
+    for cell in list(header_row.findall("x:c", NS)):
+        header_row.remove(cell)
+    for column_index, (header, style_id) in enumerate(zip(HEADERS, HEADER_STYLES)):
+        column = chr(ord("A") + column_index)
+        cell = ET.SubElement(
+            header_row,
+            f"{{{XML_NS}}}c",
+            {"r": f"{column}1", "s": style_id, "t": "inlineStr"},
+        )
+        inline_string = ET.SubElement(cell, f"{{{XML_NS}}}is")
+        ET.SubElement(inline_string, f"{{{XML_NS}}}t").text = header
+
+    columns = root.find("x:cols", NS)
+    if columns is not None and not any(
+        column.get("min") == "6" for column in columns.findall("x:col", NS)
+    ):
+        ET.SubElement(
+            columns,
+            f"{{{XML_NS}}}col",
+            {"min": "6", "max": "6", "width": "18", "hidden": "0", "customWidth": "1"},
+        )
+
     for row in rows[1:]:
         sheet_data.remove(row)
 

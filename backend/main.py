@@ -10,9 +10,10 @@ import random
 import threading
 import uuid
 from datetime import datetime, timezone
+from urllib.parse import unquote
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from data_loader import (
@@ -356,6 +357,41 @@ def _get_product_info(product_id, data):
     }
 
 
+def _identity_value(request: Request, *header_names: str) -> str:
+    """Read a trusted proxied identity header, including URL-encoded names."""
+    for header_name in header_names:
+        value = str(request.headers.get(header_name, "") or "").strip()
+        if value:
+            try:
+                return unquote(value)[:100]
+            except Exception:
+                return value[:100]
+    return ""
+
+
+def _request_identity(request: Request) -> dict:
+    """Normalize DingTalk and data-platform identity headers for swap tasks."""
+    userid = _identity_value(
+        request,
+        "x-dingtalk-userid",
+        "x-data-platform-userid",
+    )
+    username = _identity_value(
+        request,
+        "x-dingtalk-username",
+        "x-data-platform-username",
+    )
+    return {
+        # Keep both spellings for compatibility with existing consumers.
+        "dingding_userid": userid,
+        "dingding_username": username,
+        "dingtalk_userid": userid,
+        "dingtalk_username": username,
+        "operator": username or userid,
+        "operator_id": userid,
+    }
+
+
 @app.get("/api/swap-image/products")
 def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
     """换图工作台商品列表：可按外部日期或日期区间筛选，否则展示最近日期。"""
@@ -626,12 +662,15 @@ def api_swap_auto_plan(payload: dict):
 
 
 @app.post("/api/swap-image/execute")
-def api_swap_execute(payload: dict):
+def api_swap_execute(payload: dict, request: Request):
     source_id = payload.get('source_product_id', '')
     source_image_urls = payload.get('source_image_urls', [])
     target_ids = payload.get('target_product_ids', [])
     target_image_urls = payload.get('target_image_urls', {}) or {}
-    operator = str(payload.get('operator', '') or '').strip()[:100]
+    identity = _request_identity(request)
+    # The trusted proxy identity wins; payload remains a local-development fallback.
+    operator = identity["operator"] or str(payload.get('operator', '') or '').strip()[:100]
+    identity["operator"] = operator
     if not source_id or not target_ids or not source_image_urls:
         return {"success": False, "error": "缺少参数"}
 
@@ -650,7 +689,7 @@ def api_swap_execute(payload: dict):
         "product_id": source_id,
         "image_url": img["image_url"],
         "product_code": source_info["product_code"],
-        "operator": operator,
+        **identity,
     } for img in source_imgs]
 
     targets = []
@@ -686,12 +725,12 @@ def api_swap_execute(payload: dict):
             "product_id": tid,
             "image_url": url,
             "product_code": target_info["product_code"],
-            "operator": operator,
+            **identity,
         } for url in selected_urls)
 
     swap_command = {
         "action": "swap_image",
-        "operator": operator,
+        **identity,
         "source": {
             "product_id": source_id,
             "product_code": source_info.get("product_code", ""),
@@ -715,7 +754,7 @@ def api_swap_execute(payload: dict):
                 "claimed_at": "",
                 "claimed_by": "",
                 "excel_file": FIXED_SWAP_EXCEL_NAME,
-                "operator": operator,
+                **identity,
                 "source_count": len(main_rows),
                 "target_count": len(replacement_rows),
                 "workbook_rows": {
