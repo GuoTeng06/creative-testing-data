@@ -6,19 +6,21 @@ import sys
 import os
 import json
 import re
+import random
 import threading
 import uuid
 from datetime import datetime, timezone
+from urllib.parse import unquote
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from data_loader import (
     load_all_data, get_summary, get_products, get_creatives_by_product,
-    get_trends, get_product_aggregates
+    get_trends, get_product_aggregates, get_store_aggregates, get_brand_trends
 )
-from swap_workbook import build_swap_workbook
+from swap_workbook import build_swap_workbook, read_swap_workbook
 
 app = FastAPI(title="测图数据看板 API", version="2.0.0")
 
@@ -43,9 +45,15 @@ def serve_frontend():
 
 
 @app.get("/api/summary")
-def api_summary(date_from: str = Query(None), date_to: str = Query(None), store: str = Query(None)):
-    data = load_all_data()
-    return get_summary(data, date_from=date_from, date_to=date_to, store=store)
+def api_summary(
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    data = load_all_data(include_empty=include_empty)
+    return get_summary(data, date_from=date_from, date_to=date_to, store=store, brand=brand)
 
 
 @app.get("/api/products")
@@ -55,25 +63,89 @@ def api_products():
 
 
 @app.get("/api/products/aggregates")
-def api_product_aggregates():
-    data = load_all_data()
-    return get_product_aggregates(data)
+def api_product_aggregates(
+    date: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    data = load_all_data(include_empty=include_empty)
+    return get_product_aggregates(
+        data,
+        date=date,
+        date_from=date_from,
+        date_to=date_to,
+        store=store,
+        brand=brand,
+    )
 
 
 @app.get("/api/creatives")
-def api_creatives(product_id: str = Query(...), date: str = Query(None)):
-    """某商品的所有创意明细（含推广创意URL、图片类型等新字段），可选日期筛选"""
-    data = load_all_data()
-    creatives = get_creatives_by_product(product_id, data)
-    if date:
-        creatives = [c for c in creatives if c.get('date') == date]
+def api_creatives(
+    product_id: str = Query(...),
+    date: str = Query(None),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    """某商品的所有创意明细，支持单日或日期范围筛选。"""
+    data = load_all_data(include_empty=include_empty)
+    all_creatives = get_creatives_by_product(product_id, data)
+    creatives = all_creatives
+    if date or date_from or date_to:
+        if date:
+            date_from = date_to = date
+        creatives = [
+            c for c in all_creatives
+            if (not date_from or c.get('date', '') >= date_from)
+            and (not date_to or c.get('date', '') <= date_to)
+        ]
+        if include_empty:
+            # 日期范围只改变指标口径，不改变商品的完整图片集合。若某张图在所选
+            # 范围没有记录，补一条 0 指标记录，方便运营仍能看到并识别该图位。
+            dated_urls = {str(c.get('image_url', '') or '').strip() for c in creatives}
+            representatives = {}
+            for c in all_creatives:
+                image_url = str(c.get('image_url', '') or '').strip()
+                if not image_url:
+                    continue
+                current = representatives.get(image_url)
+                score = (
+                    c.get('impressions', 0) or 0,
+                    c.get('clicks', 0) or 0,
+                    c.get('transaction_amount', 0) or 0,
+                )
+                if current is None or score > current[0]:
+                    representatives[image_url] = (score, c)
+            for image_url, (_, representative) in representatives.items():
+                if image_url in dated_urls:
+                    continue
+                empty_row = dict(representative)
+                empty_row.update({
+                    'date': date_to or date_from or '',
+                    'metrics_empty': True,
+                    'impressions': 0,
+                    'clicks': 0,
+                    'ctr': 0,
+                    'conversion_rate': 0,
+                    'transaction_amount': 0,
+                    'order_count': 0,
+                    'avg_order_amount': 0,
+                    'net_transaction': 0,
+                    'net_order_count': 0,
+                })
+                creatives.append(empty_row)
     creatives.sort(key=lambda x: x.get('impressions', 0) or 0, reverse=True)
 
     product_info = next((p for p in data['products'] if p['product_id'] == product_id), {})
 
     # 该商品有数据的日期列表
-    all_creatives = get_creatives_by_product(product_id, data)
+    # 换图工作台请求 include_empty=true 时，日期下拉也必须包含只有 0 指标的日期；
+    # 否则用户虽然能拿到图片记录，却无法通过日期筛选定位到它们。
     available_dates = sorted(set(c.get('date') for c in all_creatives if c.get('date') and (
+        include_empty or
         (c.get('impressions', 0) or 0) > 0 or (c.get('transaction_amount', 0) or 0) > 0
     )))
 
@@ -84,12 +156,14 @@ def api_creatives(product_id: str = Query(...), date: str = Query(None)):
             'image_url': c.get('image_url', ''),
             'image_type': c.get('image_type', ''),
             'status': c.get('status', ''),
+            'metrics_empty': bool(c.get('metrics_empty', False)),
             'impressions': c.get('impressions', 0) or 0,
             'clicks': c.get('clicks', 0) or 0,
             'ctr': round(c.get('ctr', 0) or 0, 4),
             'conversion_rate': round(c.get('conversion_rate', 0) or 0, 4),
             'transaction_amount': c.get('transaction_amount', 0) or 0,
             'order_count': c.get('order_count', 0) or 0,
+            'avg_order_amount': c.get('avg_order_amount', 0) or 0,
             'net_transaction': c.get('net_transaction', 0) or 0,
             'net_order_count': c.get('net_order_count', 0) or 0,
             'date': c.get('date', ''),
@@ -186,6 +260,40 @@ def api_stores():
     return [{'name': k, 'creative_count': v} for k, v in sorted(store_counts.items())]
 
 
+@app.get("/api/stores/aggregates")
+def api_store_aggregates(
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    """按店铺返回概览指标，供 KPI 卡片的明细弹窗使用。"""
+    data = load_all_data(include_empty=include_empty)
+    return get_store_aggregates(data, date_from=date_from, date_to=date_to, store=store, brand=brand)
+
+
+@app.get("/api/brands/trends")
+def api_brand_trends(
+    metric: str = Query('impressions'),
+    date_from: str = Query(None),
+    date_to: str = Query(None),
+    store: str = Query(None),
+    brand: str = Query(None),
+    include_empty: bool = Query(False),
+):
+    """按品牌返回每日核心指标趋势。"""
+    data = load_all_data(include_empty=include_empty)
+    return get_brand_trends(
+        data,
+        metric=metric,
+        date_from=date_from,
+        date_to=date_to,
+        store=store,
+        brand=brand,
+    )
+
+
 @app.get("/api/dates")
 def api_dates():
     data = load_all_data()
@@ -202,6 +310,7 @@ SWAP_TASK_DIR = os.path.abspath(os.getenv(
 ))
 SWAP_TASK_LEASE_SECONDS = int(os.getenv("SWAP_TASK_LEASE_SECONDS", "180"))
 SWAP_TASK_LOCK = threading.Lock()
+FIXED_SWAP_EXCEL_NAME = "换图任务.xlsx"
 os.makedirs(SWAP_TASK_DIR, exist_ok=True)
 
 
@@ -216,8 +325,17 @@ def _task_json_path(job_id):
 
 
 def _task_excel_path(job_id):
+    """Keep the fixed Excel filename isolated inside its task directory."""
     _task_json_path(job_id)
-    return os.path.join(SWAP_TASK_DIR, f"换图任务_{job_id}.xlsx")
+    return os.path.join(SWAP_TASK_DIR, job_id, FIXED_SWAP_EXCEL_NAME)
+
+
+def _legacy_task_excel_path(excel_file):
+    """Resolve files created before per-task directories were introduced."""
+    safe_name = os.path.basename(str(excel_file or ""))
+    if safe_name != str(excel_file or "") or not re.fullmatch(r"换图任务_[A-Za-z0-9_-]+\.xlsx", safe_name):
+        return ""
+    return os.path.join(SWAP_TASK_DIR, safe_name)
 
 
 def _read_task(job_id):
@@ -248,10 +366,61 @@ def _get_product_info(product_id, data):
     }
 
 
+def _identity_value(request: Request, *header_names: str) -> str:
+    """Read a trusted proxied identity header, including URL-encoded names."""
+    for header_name in header_names:
+        value = str(request.headers.get(header_name, "") or "").strip()
+        if value:
+            try:
+                return unquote(value)[:100]
+            except Exception:
+                return value[:100]
+    return ""
+
+
+def _request_identity(request: Request) -> dict:
+    """Normalize DingTalk and data-platform identity headers for swap tasks."""
+    userid = _identity_value(
+        request,
+        "x-dingtalk-userid",
+        "x-data-platform-userid",
+    )
+    username = _identity_value(
+        request,
+        "x-dingtalk-username",
+        "x-data-platform-username",
+    )
+    return {
+        # Keep both spellings for compatibility with existing consumers.
+        "dingding_userid": userid,
+        "dingding_username": username,
+        "dingtalk_userid": userid,
+        "dingtalk_username": username,
+        "operator": username or userid,
+        "operator_id": userid,
+    }
+
+
 @app.get("/api/swap-image/products")
-def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
-    """换图工作台商品列表：可按外部日期或日期区间筛选，否则展示最近日期。"""
-    data = load_all_data()
+def api_swap_products(
+    date: str = '',
+    date_from: str = '',
+    date_to: str = '',
+    product_query: str = '',
+    store: str = '',
+    brand: str = '',
+    product_code: str = '',
+    product_code_exact: str = '',
+    paged: bool = False,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(40, ge=10, le=500),
+):
+    """换图工作台商品列表。
+
+    默认保持旧版数组响应；前端传 ``paged=true`` 时启用服务端筛选与分页，
+    避免首次进入工作台就传输并渲染全部商品。
+    """
+    data = load_all_data(include_empty=True)
     grouped = {}
     for record in data['records']:
         pid = record.get('product_id', '')
@@ -301,44 +470,119 @@ def api_swap_products(date: str = '', date_from: str = '', date_to: str = ''):
             'image_count': len({r.get('image_url') for r in records if r.get('image_url')}),
         })
 
-    return sorted(rows, key=lambda row: (row['date'], row['impressions']), reverse=True)
+    rows.sort(key=lambda row: (row['date'], row['impressions']), reverse=True)
+    if not paged:
+        return rows
+
+    def normalized(value):
+        return re.sub(r'[\s\u3000]+', '', str(value or '')).lower()
+
+    # 品牌选项基于当前日期范围生成，不受当前品牌筛选影响。
+    available_brands = sorted({str(row.get('brand') or '').strip() for row in rows if row.get('brand')})
+    product_query_norm = normalized(product_query)
+    store_norm = normalized(store)
+    code_norm = normalized(product_code)
+    exact_code_norm = normalized(product_code_exact)
+    filtered = []
+    for row in rows:
+        if product_query_norm and product_query_norm not in normalized(row.get('product_id')) \
+                and product_query_norm not in normalized(row.get('product_title')):
+            continue
+        if store_norm and store_norm not in normalized(row.get('store_name')):
+            continue
+        if brand and str(row.get('brand') or '') != brand:
+            continue
+        row_code = normalized(row.get('product_code'))
+        if exact_code_norm and row_code != exact_code_norm:
+            continue
+        if code_norm and code_norm not in row_code:
+            continue
+        filtered.append(row)
+
+    total = len(filtered)
+    pages = max(1, (total + page_size - 1) // page_size)
+    page = min(page, pages)
+    start = (page - 1) * page_size
+    return {
+        'items': filtered[start:start + page_size],
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+        'pages': pages,
+        'brands': available_brands,
+    }
 
 
 def _get_product_images(product_id, data):
     creatives = get_creatives_by_product(product_id, data)
-    # 先按净交易额排序，确保去重时保留数据最好的那条
-    creatives.sort(key=lambda x: (x.get('net_transaction', 0) or 0), reverse=True)
-    main_images = []
-    other_images = []
-    seen_urls = set()
+    # 同一个链接可能有多天记录。先按图片地址聚合，保留指标为 0 的图片，
+    # 再按“1 张主图 + 9 张轮播图”的商品图片位顺序截取，避免按日期重复显示。
+    by_url = {}
     for c in creatives:
-        url = c.get('image_url', '')
-        if not url or url in seen_urls:
+        url = str(c.get('image_url', '') or '').strip()
+        if not url:
             continue
-        seen_urls.add(url)
-        img = {
-            "image_url": url,
-            "image_type": c.get('image_type', ''),
-            "status": c.get('status', ''),
-            "net_transaction": c.get('net_transaction', 0) or 0,
-            "impressions": c.get('impressions', 0) or 0,
-            "clicks": c.get('clicks', 0) or 0,
-            "ctr": c.get('ctr', 0) or 0,
-            "transaction_amount": c.get('transaction_amount', 0) or 0,
-            "order_count": c.get('order_count', 0) or 0,
-        }
-        if c.get('image_type', '') in SLOT_IMAGE_TYPES:
-            main_images.append(img)
-        else:
-            other_images.append(img)
-    main_images.sort(key=lambda x: x['net_transaction'], reverse=True)
-    other_images.sort(key=lambda x: x['net_transaction'], reverse=True)
-    return main_images, other_images
+        score = (
+            c.get('net_transaction', 0) or 0,
+            c.get('impressions', 0) or 0,
+            c.get('clicks', 0) or 0,
+            c.get('order_count', 0) or 0,
+        )
+        current = by_url.get(url)
+        if current is None:
+            current = {
+                "image_url": url,
+                "image_type": c.get('image_type', '') or '',
+                "status": c.get('status', '') or '',
+                "net_transaction": 0,
+                "impressions": 0,
+                "clicks": 0,
+                "ctr": 0,
+                "transaction_amount": 0,
+                "order_count": 0,
+                "_best_score": score,
+            }
+            by_url[url] = current
+        current['net_transaction'] += c.get('net_transaction', 0) or 0
+        current['impressions'] += c.get('impressions', 0) or 0
+        current['clicks'] += c.get('clicks', 0) or 0
+        current['transaction_amount'] += c.get('transaction_amount', 0) or 0
+        current['order_count'] += c.get('order_count', 0) or 0
+        if score > current['_best_score']:
+            current['_best_score'] = score
+            current['image_type'] = c.get('image_type', '') or current['image_type']
+            current['status'] = c.get('status', '') or current['status']
+        current['ctr'] = current['clicks'] / current['impressions'] if current['impressions'] else 0
+
+    images = list(by_url.values())
+    for image in images:
+        image.pop('_best_score', None)
+    rank = lambda image: (
+        image.get('net_transaction', 0),
+        image.get('impressions', 0),
+        image.get('clicks', 0),
+    )
+    main_types = {'主图', '主轮播图'}
+    carousel_types = {'轮播图', '副轮播图'}
+    primary = sorted((img for img in images if img.get('image_type') in main_types), key=rank, reverse=True)
+    carousel = sorted((img for img in images if img.get('image_type') in carousel_types), key=rank, reverse=True)
+    selected = []
+    if primary:
+        selected.append(primary[0])
+    selected.extend(carousel[:9])
+    # 数据源偶尔没有图片类型标记，或轮播图不足 9 张；用剩余唯一图片补足展示位。
+    selected_urls = {img['image_url'] for img in selected}
+    remaining = sorted((img for img in images if img['image_url'] not in selected_urls), key=rank, reverse=True)
+    selected.extend(remaining[:max(0, TOTAL_IMAGE_SLOTS - len(selected))])
+    selected = selected[:TOTAL_IMAGE_SLOTS]
+    selected_urls = {img['image_url'] for img in selected}
+    other_images = [img for img in images if img['image_url'] not in selected_urls]
+    return selected, other_images
 
 
 @app.post("/api/swap-image/preview")
 def api_swap_preview(payload: dict):
-    data = load_all_data()
+    data = load_all_data(include_empty=True)
     source_id = payload.get('source_product_id', '')
     target_ids = payload.get('target_product_ids', [])
     target_image_urls = payload.get('target_image_urls', {}) or {}
@@ -346,8 +590,9 @@ def api_swap_preview(payload: dict):
         return {"error": "请选择源商品和至少一个目标商品"}
 
     source_main, source_other = _get_product_images(source_id, data)
-    source_display_types = {'主轮播图', '副轮播图', '创意图'}
-    source_images = [img for img in source_main + source_other if img.get('image_type', '') in source_display_types]
+    # _get_product_images 已经完成“1 主图 + 9 轮播图”的唯一图片位筛选，
+    # 不再按是否有指标或类型标签过滤，确保空数据图片也能被选择。
+    source_images = source_main
     if not source_images:
         return {"error": f"找不到源商品 {source_id} 的创意数据"}
 
@@ -380,16 +625,121 @@ def api_swap_preview(payload: dict):
     }
 
 
+@app.post("/api/swap-image/auto-plan")
+def api_swap_auto_plan(payload: dict):
+    """Build a one-click swap plan for the same product code.
+
+    The source selection determines the image types and counts. Target links
+    are limited to other products with the same code and zero impressions on
+    the matching image type. Carousel candidates are shuffled deterministically
+    so repeated previews do not unexpectedly change the plan.
+    """
+    data = load_all_data(include_empty=True)
+    source_id = str(payload.get('source_product_id', '') or '')
+    source_urls = list(dict.fromkeys(str(url).strip() for url in (payload.get('source_image_urls') or []) if str(url).strip()))
+    if not source_id or not source_urls:
+        return {"success": False, "error": "请先选择源商品和源图片"}
+    source_records = [row for row in data.get('records', []) if str(row.get('product_id', '')) == source_id]
+    source_info = _get_product_info(source_id, data)
+    if not source_records:
+        return {"success": False, "error": f"找不到源商品 {source_id}"}
+    source_code = source_info.get('product_code', '') or next((row.get('product_code', '') for row in source_records if row.get('product_code')), '')
+    if not source_code:
+        return {"success": False, "error": "源商品没有商品编码，无法按编码匹配"}
+
+    source_main, source_other = _get_product_images(source_id, data)
+    source_by_url = {img.get('image_url'): img for img in source_main + source_other}
+    source_images = [source_by_url[url] for url in source_urls if url in source_by_url]
+    if not source_images:
+        return {"success": False, "error": "找不到已选源图片，请重新选择"}
+
+    def is_main(image):
+        return image.get('image_type') in {'主图', '主轮播图'}
+
+    def is_carousel(image):
+        return image.get('image_type') in {'轮播图', '副轮播图'}
+
+    requested_main = sum(1 for image in source_images if is_main(image))
+    requested_carousel = sum(1 for image in source_images if is_carousel(image))
+    requested_other = len(source_images) - requested_main - requested_carousel
+    products = {}
+    for record in data.get('records', []):
+        pid = str(record.get('product_id', '') or '')
+        if not pid or pid == source_id or record.get('product_code', '') != source_code:
+            continue
+        products.setdefault(pid, []).append(record)
+
+    def image_groups(records):
+        by_url = {}
+        for record in records:
+            url = str(record.get('image_url', '') or '').strip()
+            if not url:
+                continue
+            current = by_url.get(url)
+            score = (record.get('impressions', 0) or 0, record.get('clicks', 0) or 0, record.get('transaction_amount', 0) or 0)
+            if current is None or score > current['_score']:
+                by_url[url] = {**record, 'image_url': url, '_score': score}
+        values = list(by_url.values())
+        return [x for x in values if is_main(x)], [x for x in values if is_carousel(x)], values
+
+    def pick_zero(images, count, randomize=False):
+        candidates = [image for image in images if (image.get('impressions', 0) or 0) == 0]
+        if len(candidates) < count:
+            return []
+        if randomize:
+            return random.SystemRandom().sample(candidates, count)
+        return sorted(candidates, key=lambda image: image.get('image_url', ''))[:count]
+
+    targets = []
+    for pid, records in products.items():
+        main, carousel, all_images = image_groups(records)
+        picked = []
+        picked.extend(pick_zero(main, requested_main))
+        picked.extend(pick_zero(carousel, requested_carousel, randomize=True))
+        if requested_other:
+            others = [image for image in all_images if not is_main(image) and not is_carousel(image)]
+            picked.extend(pick_zero(others, requested_other, randomize=True))
+        if len(picked) != len(source_images):
+            continue
+        # Keep the target entry only when every requested slot is zero-exposure.
+        if any((image.get('impressions', 0) or 0) != 0 for image in picked):
+            continue
+        targets.append({
+            'product_id': pid,
+            'store_name': records[0].get('store_name', ''),
+            'brand': records[0].get('brand', ''),
+            'product_code': source_code,
+            'product_title': records[0].get('product_title', ''),
+            'selected_images': [{k: image.get(k, '') for k in ('image_url', 'image_type', 'impressions', 'clicks')} for image in picked],
+            'selected_count': len(picked),
+        })
+    targets.sort(key=lambda item: (item.get('store_name', ''), item.get('product_id', '')))
+    return {
+        'success': True,
+        'source_product_id': source_id,
+        'product_code': source_code,
+        'source_image_count': len(source_images),
+        'source_image_types': [image.get('image_type', '') for image in source_images],
+        'target_count': len(targets),
+        'targets': targets,
+        'target_image_urls': {item['product_id']: [image['image_url'] for image in item['selected_images']] for item in targets},
+    }
+
+
 @app.post("/api/swap-image/execute")
-def api_swap_execute(payload: dict):
+def api_swap_execute(payload: dict, request: Request):
     source_id = payload.get('source_product_id', '')
     source_image_urls = payload.get('source_image_urls', [])
     target_ids = payload.get('target_product_ids', [])
     target_image_urls = payload.get('target_image_urls', {}) or {}
+    identity = _request_identity(request)
+    # The trusted proxy identity wins; payload remains a local-development fallback.
+    operator = identity["operator"] or str(payload.get('operator', '') or '').strip()[:100]
+    identity["operator"] = operator
     if not source_id or not target_ids or not source_image_urls:
         return {"success": False, "error": "缺少参数"}
 
-    data = load_all_data()
+    data = load_all_data(include_empty=True)
     source_main, source_other = _get_product_images(source_id, data)
     source_all = source_main + source_other
     source_by_url = {img['image_url']: img for img in source_all}
@@ -404,7 +754,7 @@ def api_swap_execute(payload: dict):
         "product_id": source_id,
         "image_url": img["image_url"],
         "product_code": source_info["product_code"],
-        "operator": "",
+        **identity,
     } for img in source_imgs]
 
     targets = []
@@ -427,25 +777,28 @@ def api_swap_execute(payload: dict):
                           or (img.get('clicks', 0) or 0) > 0
                           or (img.get('transaction_amount', 0) or 0) > 0])
         empty_slots = max(0, TOTAL_IMAGE_SLOTS - data_slots)
+        target_info = _get_product_info(tid, data)
         targets.append({
             "product_id": tid,
+            "product_code": target_info.get("product_code", ""),
             "empty_slots": empty_slots,
             "replace_image_urls": selected_urls,
             "replace_count": len(selected_urls),
         })
-        target_info = _get_product_info(tid, data)
         replacement_rows.extend({
             "store_name": target_info["store_name"],
             "product_id": tid,
             "image_url": url,
             "product_code": target_info["product_code"],
-            "operator": "",
+            **identity,
         } for url in selected_urls)
 
     swap_command = {
         "action": "swap_image",
+        **identity,
         "source": {
             "product_id": source_id,
+            "product_code": source_info.get("product_code", ""),
             "images": [{"image_url": img["image_url"], "image_type": img.get('image_type', '')}
                        for img in source_imgs],
         },
@@ -454,21 +807,27 @@ def api_swap_execute(payload: dict):
 
     try:
         job_id = uuid.uuid4().hex[:12]
-        excel_path = _task_excel_path(job_id)
-        build_swap_workbook(main_rows, replacement_rows, excel_path)
-        task = {
-            "job_id": job_id,
-            "status": "queued",
-            "phase": "waiting_listener",
-            "created_at": _utc_now(),
-            "claimed_at": "",
-            "claimed_by": "",
-            "excel_file": os.path.basename(excel_path),
-            "source_count": len(main_rows),
-            "target_count": len(replacement_rows),
-            "command": swap_command,
-        }
         with SWAP_TASK_LOCK:
+            excel_path = _task_excel_path(job_id)
+            os.makedirs(os.path.dirname(excel_path), exist_ok=True)
+            build_swap_workbook(main_rows, replacement_rows, excel_path)
+            task = {
+                "job_id": job_id,
+                "status": "queued",
+                "phase": "waiting_listener",
+                "created_at": _utc_now(),
+                "claimed_at": "",
+                "claimed_by": "",
+                "excel_file": FIXED_SWAP_EXCEL_NAME,
+                **identity,
+                "source_count": len(main_rows),
+                "target_count": len(replacement_rows),
+                "workbook_rows": {
+                    "主图数据": main_rows,
+                    "替换数据": replacement_rows,
+                },
+                "command": swap_command,
+            }
             _write_task(task)
         return {
             "success": True,
@@ -525,7 +884,7 @@ def api_swap_task_pending(listener_id: str = Query(default="")):
 
         task = min(candidates, key=lambda item: item.get("created_at", ""))
         task["status"] = "claimed"
-        task["phase"] = "excel_received"
+        task["phase"] = "claimed_by_listener"
         task["claimed_at"] = _utc_now()
         task["claimed_by"] = listener_id
         _write_task(task)
@@ -536,21 +895,264 @@ def api_swap_task_pending(listener_id: str = Query(default="")):
             "status": task["status"],
             "excel_file": task["excel_file"],
             "excel_url": f"/api/swap-tasks/{task['job_id']}/excel",
+            "operator": task.get("operator", ""),
+            "created_at": task.get("created_at", ""),
             "command": task["command"],
         }
     }
 
 
+@app.get("/api/swap-tasks/records")
+def api_swap_task_records(limit: int = Query(default=500, ge=1, le=2000)):
+    """Return task audit records for the submitter-computer MySQL recorder."""
+    records = []
+    with SWAP_TASK_LOCK:
+        for filename in os.listdir(SWAP_TASK_DIR):
+            if not filename.endswith(".json"):
+                continue
+            try:
+                task = _read_task(filename[:-5])
+                if task:
+                    if not task.get("workbook_rows"):
+                        excel_path = _task_excel_path(task["job_id"])
+                        if not os.path.exists(excel_path):
+                            excel_path = _legacy_task_excel_path(task.get("excel_file", ""))
+                        if excel_path and os.path.exists(excel_path):
+                            task["workbook_rows"] = read_swap_workbook(excel_path)
+                            if "operator" not in task:
+                                all_rows = sum(task["workbook_rows"].values(), [])
+                                task["operator"] = next(
+                                    (row.get("operator", "") for row in all_rows
+                                     if row.get("operator")),
+                                    "",
+                                )
+                            _write_task(task)
+                    records.append(task)
+            except Exception:
+                continue
+    records.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    return {"records": records[:limit], "count": min(len(records), limit)}
+
+
+@app.get("/api/swap-tasks/queue")
+def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
+    """Return compact queue items for the swap workspace."""
+    # Older task records did not persist product codes; resolve them from the
+    # current dataset so the queue remains readable after the schema update.
+    try:
+        product_data = load_all_data(include_empty=True)
+    except Exception:
+        product_data = {"records": []}
+
+    tasks = []
+    with SWAP_TASK_LOCK:
+        for filename in os.listdir(SWAP_TASK_DIR):
+            if not filename.endswith(".json"):
+                continue
+            try:
+                task = _read_task(filename[:-5])
+                if task:
+                    tasks.append(task)
+            except Exception:
+                continue
+
+    queued = sorted(
+        (task for task in tasks if task.get("status") in {"queued", "pending"}),
+        key=lambda item: item.get("created_at", ""),
+    )
+    queue_positions = {
+        task["job_id"]: index for index, task in enumerate(queued, start=1)
+    }
+    tasks.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    items = []
+    for task in tasks[:limit]:
+        command = task.get("command") or {}
+        source = command.get("source") or {}
+        targets = command.get("targets") or []
+        source_product_id = str(source.get("product_id", ""))
+        source_product_code = source.get("product_code", "")
+        if not source_product_code and source_product_id:
+            source_product_code = _get_product_info(source_product_id, product_data).get("product_code", "")
+        target_product_codes = []
+        for target in targets:
+            target_id = str(target.get("product_id", ""))
+            target_code = target.get("product_code", "")
+            if not target_code and target_id:
+                target_code = _get_product_info(target_id, product_data).get("product_code", "")
+            target_product_codes.append(str(target_code))
+        status = task.get("status", "queued")
+        items.append({
+            "job_id": task["job_id"],
+            "status": status,
+            "phase": task.get("phase", ""),
+            "created_at": task.get("created_at", ""),
+            "updated_at": task.get("updated_at", ""),
+            "claimed_by": task.get("claimed_by", ""),
+            "source_product_id": source_product_id,
+            "source_product_code": source_product_code,
+            "source_count": task.get("source_count", 0),
+            "target_count": len(targets),
+            "target_product_ids": [
+                str(target.get("product_id", "")) for target in targets
+            ],
+            "target_product_codes": target_product_codes,
+            "queue_position": queue_positions.get(task["job_id"]),
+            "cancelable": status in {"queued", "pending"},
+            "error": task.get("error", ""),
+        })
+    return {"tasks": items, "queued_count": len(queued)}
+
+
+@app.get("/api/swap-tasks/{job_id}")
+def api_swap_task_detail(job_id: str):
+    """Return the persisted source and target records for one swap task."""
+    try:
+        task = _read_task(job_id)
+    except ValueError:
+        return {"success": False, "error": "任务编号格式错误"}
+    if not task:
+        return {"success": False, "error": "任务不存在"}
+
+    command = task.get("command") or {}
+    source = command.get("source") or {}
+    targets = command.get("targets") or []
+
+    # Store and product-code values are also persisted in workbook_rows. Use
+    # them first so historical records remain readable even if the database is
+    # temporarily unavailable or a product has since changed.
+    rows_by_product = {}
+    workbook_rows = task.get("workbook_rows") or {}
+    if not workbook_rows:
+        excel_path = _task_excel_path(job_id)
+        if not os.path.exists(excel_path):
+            excel_path = _legacy_task_excel_path(task.get("excel_file", ""))
+        if excel_path and os.path.exists(excel_path):
+            try:
+                workbook_rows = read_swap_workbook(excel_path)
+            except Exception:
+                workbook_rows = {}
+    for sheet_rows in workbook_rows.values():
+        if not isinstance(sheet_rows, list):
+            continue
+        for row in sheet_rows:
+            if not isinstance(row, dict):
+                continue
+            product_id = str(row.get("product_id", ""))
+            if product_id and product_id not in rows_by_product:
+                rows_by_product[product_id] = row
+
+    source_product_id = str(source.get("product_id", ""))
+    source_sheet_rows = workbook_rows.get("主图数据") or []
+    if not source_product_id and source_sheet_rows:
+        source_product_id = str(source_sheet_rows[0].get("product_id", ""))
+    source_row = rows_by_product.get(source_product_id, {})
+    source_images = []
+    for image in source.get("images") or []:
+        if not isinstance(image, dict) or not image.get("image_url"):
+            continue
+        source_images.append({
+            "image_url": image.get("image_url", ""),
+            "image_type": image.get("image_type", ""),
+        })
+    if not source_images:
+        source_images = [
+            {"image_url": str(row.get("image_url", "")), "image_type": ""}
+            for row in source_sheet_rows
+            if isinstance(row, dict) and row.get("image_url")
+        ]
+
+    target_details = []
+    for target in targets:
+        if not isinstance(target, dict):
+            continue
+        product_id = str(target.get("product_id", ""))
+        row = rows_by_product.get(product_id, {})
+        target_details.append({
+            "product_id": product_id,
+            "product_code": str(target.get("product_code") or row.get("product_code") or ""),
+            "store_name": str(row.get("store_name", "")),
+            "images": [
+                {"image_url": str(image_url)}
+                for image_url in (target.get("replace_image_urls") or [])
+                if image_url
+            ],
+        })
+    if not target_details:
+        grouped_targets = {}
+        for row in workbook_rows.get("替换数据") or []:
+            if not isinstance(row, dict):
+                continue
+            product_id = str(row.get("product_id", ""))
+            if not product_id:
+                continue
+            detail = grouped_targets.setdefault(product_id, {
+                "product_id": product_id,
+                "product_code": str(row.get("product_code", "")),
+                "store_name": str(row.get("store_name", "")),
+                "images": [],
+            })
+            if row.get("image_url"):
+                detail["images"].append({"image_url": str(row.get("image_url"))})
+        target_details = list(grouped_targets.values())
+
+    status = task.get("status", "queued")
+    return {
+        "success": True,
+        "job_id": task.get("job_id", job_id),
+        "status": status,
+        "phase": task.get("phase", ""),
+        "created_at": task.get("created_at", ""),
+        "updated_at": task.get("updated_at", ""),
+        "claimed_at": task.get("claimed_at", ""),
+        "claimed_by": task.get("claimed_by", ""),
+        "operator": task.get("operator", ""),
+        "cancelable": status in {"queued", "pending"},
+        "source_count": len(source_images),
+        "target_count": len(target_details),
+        "source": {
+            "product_id": source_product_id,
+            "product_code": str(source.get("product_code") or source_row.get("product_code") or ""),
+            "store_name": str(source_row.get("store_name", "")),
+            "images": source_images,
+        },
+        "targets": target_details,
+        "error": task.get("error", ""),
+    }
+
+
+@app.post("/api/swap-tasks/{job_id}/cancel")
+def api_swap_task_cancel(job_id: str):
+    """Cancel a task only while it is still waiting in the queue."""
+    with SWAP_TASK_LOCK:
+        task = _read_task(job_id)
+        if not task:
+            return {"success": False, "error": "任务不存在"}
+        current_status = task.get("status", "queued")
+        if current_status not in {"queued", "pending"}:
+            return {
+                "success": False,
+                "error": "任务已被接收或已结束，无法取消",
+                "status": current_status,
+            }
+        task["status"] = "stopped"
+        task["phase"] = "cancelled_by_user"
+        task["cancelled_at"] = _utc_now()
+        _write_task(task)
+    return {"success": True, "job_id": job_id, "status": "stopped"}
+
+
 @app.get("/api/swap-tasks/{job_id}/excel")
 def api_swap_task_excel(job_id: str):
     task = _read_task(job_id)
-    excel_path = _task_excel_path(job_id)
+    excel_path = _task_excel_path(job_id) if task else ""
+    if task and not os.path.exists(excel_path):
+        excel_path = _legacy_task_excel_path(task.get("excel_file", ""))
     if not task or not os.path.exists(excel_path):
         return {"error": "Excel file not found"}
     return FileResponse(
         excel_path,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        filename=task.get("excel_file") or os.path.basename(excel_path),
+        filename=FIXED_SWAP_EXCEL_NAME,
     )
 
 
@@ -564,7 +1166,10 @@ def api_swap_task_status(job_id: str, payload: dict):
         status = payload.get("status", task.get("status", "claimed"))
         if status not in allowed_statuses:
             return {"success": False, "error": "Invalid status"}
-        protected = {"job_id", "command", "excel_file", "created_at"}
+        protected = {
+            "job_id", "command", "excel_file", "created_at", "workbook_rows",
+            "operator", "source_count", "target_count",
+        }
         for key, value in payload.items():
             if key not in protected:
                 task[key] = value
