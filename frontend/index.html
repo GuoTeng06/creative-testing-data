@@ -828,23 +828,24 @@ html,body{width:100%;height:100%;overflow:hidden}
 
       <section class="overview-products" v-if="selectedOverviewStore">
         <div class="overview-section-head">
-          <div>
-            <h3>{{selectedOverviewStore}} · 商品信息</h3>
-            <p>{{overviewBrand||'全部品牌'}} · 点击指标表头可独立排序，点击商品查看每张图片的详细数据。</p>
-          </div>
-          <div class="code-control">
-            <label>商品编码</label>
-            <div class="code-autocomplete" @click.stop>
-              <input v-model.trim="overviewCodeSearch" placeholder="输入编码模糊筛选…" autocomplete="off" @focus="overviewCodeOpen=true" @input="overviewCodeOpen=true" @keydown.enter.prevent="overviewCodeOpen=false" @keydown.esc="overviewCodeOpen=false">
-              <button v-if="overviewCodeSearch" class="code-clear" type="button" aria-label="清空商品编码" @mousedown.prevent="clearOverviewCode">×</button>
-              <div v-if="overviewCodeOpen && overviewCodeSuggestions.length" class="code-suggestions" @mousedown.prevent>
-                <button v-for="code in overviewCodeSuggestions" :key="code" type="button" @mousedown.prevent="selectOverviewCode(code)">{{code}}</button>
-                <span v-if="overviewCodeMatchCount>overviewCodeSuggestions.length" class="code-suggestions-more">还有 {{overviewCodeMatchCount-overviewCodeSuggestions.length}} 个匹配结果，请继续输入</span>
-              </div>
-              <div v-else-if="overviewCodeOpen && overviewCodeSearch" class="code-suggestions code-suggestions-empty">没有匹配的商品编码</div>
+          <div class="store-detail-heading">
+            <div>
+              <h3>{{selectedOverviewStore}} · 商品信息</h3>
+              <p>{{overviewBrand||'全部品牌'}} · 点击指标表头可独立排序，点击商品查看每张图片的详细数据。</p>
             </div>
-            <span class="overview-product-count">{{filteredOverviewProducts.length}} 个商品</span>
+            <div class="code-control">
+              <div class="code-autocomplete" @click.stop>
+                <input v-model.trim="overviewCodeSearch" aria-label="模糊搜索商品编码" placeholder="输入商品编码模糊搜索…" autocomplete="off" @focus="overviewCodeOpen=true" @input="overviewCodeOpen=true" @keydown.enter.prevent="overviewCodeOpen=false" @keydown.esc="overviewCodeOpen=false">
+                <button v-if="overviewCodeSearch" class="code-clear" type="button" aria-label="清空商品编码" @mousedown.prevent="clearOverviewCode">×</button>
+                <div v-if="overviewCodeOpen && overviewCodeSuggestions.length" class="code-suggestions" @mousedown.prevent>
+                  <button v-for="code in overviewCodeSuggestions" :key="code" type="button" @mousedown.prevent="selectOverviewCode(code)">{{code}}</button>
+                  <span v-if="overviewCodeMatchCount>overviewCodeSuggestions.length" class="code-suggestions-more">还有 {{overviewCodeMatchCount-overviewCodeSuggestions.length}} 个匹配结果，请继续输入</span>
+                </div>
+                <div v-else-if="overviewCodeOpen && overviewCodeSearch" class="code-suggestions code-suggestions-empty">没有匹配的商品编码</div>
+              </div>
+            </div>
           </div>
+          <span class="overview-product-count">{{filteredOverviewProducts.length}} 个商品</span>
         </div>
         <div v-if="!filteredOverviewProducts.length" class="empty">当前店铺或商品编码下暂无商品数据</div>
         <div v-else class="overview-product-table-wrap">
