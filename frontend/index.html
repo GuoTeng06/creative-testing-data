@@ -1978,6 +1978,8 @@ createApp({
       try{localStorage.setItem(SWAP_MEMORY_KEY,JSON.stringify(swapSelectedMemory.value));}catch(e){}
     };
     let swapAbortController=null;let swapQueueTimer=null;
+    let swapSourceRequestController=null;let swapSourceRequestId=0;
+    let swapTargetRequestController=null;let swapTargetRequestId=0;
     const loadSwapProducts=async()=>{
       try{
         const dateParams=new URLSearchParams();
@@ -1998,6 +2000,25 @@ createApp({
       }
     };
     const normalizeSwapCode=(value)=>String(value??'').trim().toLowerCase().replace(/[\s\u3000]+/g,'');
+    const buildSwapCreativeUrl=(productId)=>{
+      const params=new URLSearchParams({product_id:String(productId),include_empty:'true'});
+      if(swapDateFrom.value)params.set('date_from',swapDateFrom.value);
+      if(swapDateTo.value)params.set('date_to',swapDateTo.value);
+      return API+'/creatives?'+params.toString();
+    };
+    const swapProductImageFallback=(product)=>product&&product.image_url?[{
+      image_url:product.image_url,
+      image_type:'主轮播图',
+      status:'',
+      metrics_empty:!(Number(product.impressions)||Number(product.clicks)),
+      impressions:Number(product.impressions)||0,
+      clicks:Number(product.clicks)||0,
+      ctr:Number(product.ctr)||0,
+      conversion_rate:Number(product.conversion_rate)||0,
+      transaction_amount:Number(product.transaction_amount)||0,
+      order_count:Number(product.order_count)||0,
+      date:product.date||''
+    }]:[];
     const swapStoreOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.store_name).filter(Boolean))].sort());
     const swapBrandOptions=computed(()=>[...new Set(swapProducts.value.map(p=>p.brand).filter(Boolean))].sort());
     const filteredSwapRowsBase=computed(()=>{
@@ -2079,11 +2100,14 @@ createApp({
       &&(!swapDateTo.value||image.date<=swapDateTo.value)
     ));
     const handleSwapDateChange=async()=>{
-      applySwapDateFilter();
       await loadSwapProducts();
       if(swapSource.value){
-        const refreshed=swapProducts.value.find(p=>p.product_id===swapSource.value.product_id);
-        if(refreshed)swapSource.value=refreshed;
+        const refreshed=swapProducts.value.find(p=>String(p.product_id)===String(swapSource.value.product_id));
+        if(refreshed)await selectSwapSource(refreshed);
+        else{
+          swapAllSourceImages.value=[];swapSourceImages.value=[];
+          swapStatus.value={success:false,message:'当前日期范围内未找到该商品，请调整日期后重试'};
+        }
       }
     };
     const swapWeekdays=['日','一','二','三','四','五','六'];
@@ -2170,15 +2194,26 @@ createApp({
         .filter(item=>String(item.source_product_id)===String(p.product_id))
         .map(item=>item.image_url);
       swapAllSourceImages.value=[];swapSourceImages.value=[];swapSourceLoading.value=true;
+      if(swapSourceRequestController)swapSourceRequestController.abort();
+      swapSourceRequestController=new AbortController();
+      const requestId=++swapSourceRequestId;
       try{
-        const r=await fetch(API+'/creatives?product_id='+encodeURIComponent(p.product_id)+'&include_empty=true');
+        const r=await fetch(buildSwapCreativeUrl(p.product_id),{signal:swapSourceRequestController.signal});
+        if(!r.ok)throw new Error(`HTTP ${r.status}`);
         const data=await r.json();
-        swapAllSourceImages.value=data.creatives||[];
-        applySwapDateFilter();
+        if(requestId!==swapSourceRequestId||String(swapSource.value?.product_id)!==String(p.product_id))return;
+        const rows=Array.isArray(data.creatives)?data.creatives:[];
+        swapAllSourceImages.value=rows.length?rows:swapProductImageFallback(p);
+        // 日期范围已由后端聚合；没有对应指标的图片会以 0 数据补齐。
+        swapSourceImages.value=dedupeSwapImages(swapAllSourceImages.value);
       }catch(e){
+        if(e.name==='AbortError')return;
+        if(requestId!==swapSourceRequestId||String(swapSource.value?.product_id)!==String(p.product_id))return;
+        swapAllSourceImages.value=swapProductImageFallback(p);
+        swapSourceImages.value=dedupeSwapImages(swapAllSourceImages.value);
         swapStatus.value={success:false,message:'图片信息加载失败: '+e.message};
       }finally{
-        swapSourceLoading.value=false;
+        if(requestId===swapSourceRequestId)swapSourceLoading.value=false;
       }
     };
     const activateSwapMemoryItem=async(item)=>{
@@ -2263,14 +2298,23 @@ createApp({
       swapTargetImageProduct.value=p;swapTargetImageModalOpen.value=true;
       swapTargetImages.value=[];swapTargetImagesLoading.value=true;
       swapPreview.value=null;swapStatus.value=null;
+      if(swapTargetRequestController)swapTargetRequestController.abort();
+      swapTargetRequestController=new AbortController();
+      const requestId=++swapTargetRequestId;
       try{
-        const response=await fetch(API+'/creatives?product_id='+encodeURIComponent(p.product_id)+'&include_empty=true');
+        const response=await fetch(buildSwapCreativeUrl(p.product_id),{signal:swapTargetRequestController.signal});
+        if(!response.ok)throw new Error(`HTTP ${response.status}`);
         const data=await response.json();
-        swapTargetImages.value=filterSwapImagesByDate(data.creatives||[]);
+        if(requestId!==swapTargetRequestId||String(swapTargetImageProduct.value?.product_id)!==String(p.product_id))return;
+        const rows=Array.isArray(data.creatives)?data.creatives:[];
+        swapTargetImages.value=dedupeSwapImages(rows.length?rows:swapProductImageFallback(p));
       }catch(e){
+        if(e.name==='AbortError')return;
+        if(requestId!==swapTargetRequestId||String(swapTargetImageProduct.value?.product_id)!==String(p.product_id))return;
+        swapTargetImages.value=dedupeSwapImages(swapProductImageFallback(p));
         swapStatus.value={success:false,message:'目标图片信息加载失败: '+e.message};
       }finally{
-        swapTargetImagesLoading.value=false;
+        if(requestId===swapTargetRequestId)swapTargetImagesLoading.value=false;
       }
     };
     const toggleSwapTargetImage=(img)=>{
