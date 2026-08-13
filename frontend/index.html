@@ -1081,6 +1081,21 @@ html,body{width:100%;height:100%;overflow:hidden}
             </button>
             <button v-if="swapExecuting" class="swap-btn danger" @click="stopSwap">取消提交</button>
           </div>
+          <div v-if="swapAutoPlan" class="swap-auto-plan">
+            <div class="swap-auto-plan-head">
+              <strong>一键匹配结果</strong>
+              <span>{{swapAutoPlan.product_code}} · 命中 {{swapAutoPlan.target_count}} 个目标链接</span>
+            </div>
+            <p>按编码匹配；主轮播图匹配主轮播图，副轮播图从曝光为 0 的副轮播图中选择。</p>
+            <div v-if="!swapAutoPlan.target_count" class="swap-auto-empty">没有找到满足条件的目标链接，请确认源图类型或检查目标商品的零曝光图片。</div>
+            <div v-else class="swap-auto-targets">
+              <div v-for="target in swapAutoPlan.targets" :key="target.product_id" class="swap-auto-target">
+                <div><strong>{{target.product_id}}</strong><span>{{target.store_name}}</span></div>
+                <span class="swap-auto-count">{{target.selected_count}} 张零曝光图</span>
+              </div>
+            </div>
+            <button v-if="swapAutoPlan.target_count" class="swap-btn primary swap-auto-apply" @click="applyAutoSwapPlan">应用匹配结果</button>
+          </div>
           <div v-if="swapPreview" class="swap-preview-mini">
             <strong>换图方案：</strong>{{swapSelectedImages.length}} 张当前源图 → {{swapPreview.targets.length}} 个目标商品
             <div v-for="t in swapPreview.targets" :key="t.product_id">
@@ -1246,21 +1261,6 @@ html,body{width:100%;height:100%;overflow:hidden}
           <div>
             <h3>{{creativeProduct?.product_title||'商品图片表现'}} <span v-if="creativeData" class="swap-count">{{creativeData.creative_count}} 张唯一图片</span></h3>
             <p v-if="creativeProduct">{{creativeProduct.product_code||'无编码'}} · 商品ID {{creativeProduct.product_id}} · {{creativeProduct.store_name||'-'}}</p>
-          </div>
-          <div v-if="swapAutoPlan" class="swap-auto-plan">
-            <div class="swap-auto-plan-head">
-              <strong>一键匹配结果</strong>
-              <span>{{swapAutoPlan.product_code}} · 命中 {{swapAutoPlan.target_count}} 个目标链接</span>
-            </div>
-            <p>按编码匹配；主轮播图优先匹配主轮播图，副轮播图从曝光为 0 的副轮播图中匹配。</p>
-            <div v-if="!swapAutoPlan.target_count" class="swap-auto-empty">没有找到满足条件的目标链接，请减少源图数量或检查商品编码。</div>
-            <div v-else class="swap-auto-targets">
-              <div v-for="target in swapAutoPlan.targets" :key="target.product_id" class="swap-auto-target">
-                <div><strong>{{target.product_id}}</strong><span>{{target.store_name}}</span></div>
-                <span class="swap-auto-count">{{target.selected_count}} 张零曝光图</span>
-              </div>
-            </div>
-            <button v-if="swapAutoPlan.target_count" class="swap-btn primary swap-auto-apply" @click="applyAutoSwapPlan">应用到换图方案</button>
           </div>
           <button class="app-modal-close" aria-label="关闭商品图片窗口" @click="quickCreativeOpen=false">×</button>
         </div>
@@ -2192,7 +2192,7 @@ createApp({
       if(!swapAutoPlan.value||!swapAutoPlan.value.target_count)return;
       swapTargets.value=swapAutoPlan.value.targets.map(t=>({...t}));
       swapTargetSelections.value={...swapAutoPlan.value.target_image_urls};
-      swapPreview.value=null;swapStatus.value={success:true,message:'已应用自动匹配结果，请预览并确认后提交'};
+      swapPreview.value=null;swapStatus.value={success:true,message:'已应用自动匹配结果，可以直接提交换图任务'};
       nextTick(()=>document.querySelector('.swap-actions')?.scrollIntoView({behavior:'smooth',block:'center'}));
     };
     const swapQueueStatusText=(task)=>{
