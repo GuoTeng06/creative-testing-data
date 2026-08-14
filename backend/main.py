@@ -401,6 +401,38 @@ def _request_identity(request: Request) -> dict:
     }
 
 
+def _first_identity_value(*values):
+    """Return the first non-empty identity value as a bounded string."""
+    for value in values:
+        text = str(value or "").strip()
+        if text:
+            return text[:100]
+    return ""
+
+
+def _task_identity(task):
+    """Normalize identity fields from a task and its nested command payload."""
+    command = task.get("command") if isinstance(task.get("command"), dict) else {}
+    operator_id = _first_identity_value(
+        task.get("operator_id"), task.get("dingding_userid"), task.get("dingtalk_userid"),
+        command.get("operator_id"), command.get("dingding_userid"), command.get("dingtalk_userid"),
+    )
+    username = _first_identity_value(
+        task.get("dingding_username"), task.get("dingtalk_username"),
+        command.get("dingding_username"), command.get("dingtalk_username"),
+        task.get("operator"), command.get("operator"),
+    )
+    operator = _first_identity_value(task.get("operator"), command.get("operator"), username, operator_id)
+    return {
+        "dingding_userid": operator_id,
+        "dingding_username": username,
+        "dingtalk_userid": operator_id,
+        "dingtalk_username": username,
+        "operator_id": operator_id,
+        "operator": operator,
+    }
+
+
 @app.get("/api/swap-image/products")
 def api_swap_products(
     date: str = '',
@@ -736,6 +768,7 @@ def api_swap_execute(payload: dict, request: Request):
     # The trusted proxy identity wins; payload remains a local-development fallback.
     operator = identity["operator"] or str(payload.get('operator', '') or '').strip()[:100]
     identity["operator"] = operator
+    identity["operator_id"] = identity.get("dingding_userid", "")
     if not source_id or not target_ids or not source_image_urls:
         return {"success": False, "error": "缺少参数"}
 
@@ -895,8 +928,8 @@ def api_swap_task_pending(listener_id: str = Query(default="")):
             "status": task["status"],
             "excel_file": task["excel_file"],
             "excel_url": f"/api/swap-tasks/{task['job_id']}/excel",
-            "operator": task.get("operator", ""),
             "created_at": task.get("created_at", ""),
+            **_task_identity(task),
             "command": task["command"],
         }
     }
