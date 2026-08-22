@@ -3,3 +3,4 @@ uvicorn==0.30.0
 pymysql[rsa]==1.1.0
 cryptography>=42.0.0
 requests==2.32.3
+redis==5.0.8
