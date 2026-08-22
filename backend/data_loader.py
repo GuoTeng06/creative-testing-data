@@ -3,8 +3,15 @@
 """
 import os
 import time
+import threading
+import json
 from collections import defaultdict
 import pymysql
+
+try:
+    import redis as redis_lib
+except ImportError:  # 本地未安装 redis 时仍可回退到原有内存缓存
+    redis_lib = None
 
 DB_CONFIG = {
     'host': os.environ.get('MYSQL_HOST', '192.168.16.38'),
@@ -95,10 +102,105 @@ _cache = None
 _cache_time = 0
 _empty_cache = None
 _empty_cache_time = 0
-CACHE_TTL = 300
+try:
+    CACHE_TTL = max(1, int(os.environ.get('DATA_CACHE_TTL', '300')))
+except ValueError:
+    CACHE_TTL = 300
+_load_all_data_lock = threading.Lock()
+
+# L2 共享缓存：多个 API worker/容器实例可复用同一份 MySQL 数据。
+# Redis 不可用时自动降级为现有的进程内缓存，不影响看板可用性。
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0').strip()
+REDIS_CACHE_PREFIX = os.environ.get('REDIS_CACHE_PREFIX', 'cetu-dashboard:data:v1')
+_redis_client = None
+_redis_lock = threading.Lock()
+_redis_retry_after = 0.0
 
 
-def load_all_data(force=False, include_empty=False):
+def _redis_key(include_empty=False):
+    suffix = 'with-empty' if include_empty else 'metrics'
+    return f'{REDIS_CACHE_PREFIX}:{suffix}'
+
+
+def _get_redis_client():
+    """Create a short-timeout Redis client lazily; return None on failure."""
+    global _redis_client, _redis_retry_after
+    if redis_lib is None or not REDIS_URL:
+        return None
+    now = time.monotonic()
+    if now < _redis_retry_after:
+        return None
+    if _redis_client is not None:
+        return _redis_client
+    with _redis_lock:
+        if _redis_client is not None:
+            return _redis_client
+        try:
+            client = redis_lib.Redis.from_url(
+                REDIS_URL,
+                decode_responses=True,
+                socket_connect_timeout=0.5,
+                socket_timeout=1.0,
+                health_check_interval=30,
+            )
+            client.ping()
+            _redis_client = client
+            return client
+        except Exception as exc:
+            _redis_retry_after = now + 10
+            print(f'[DataLoader] Redis unavailable, using memory cache: {exc}')
+            return None
+
+
+def _redis_load(include_empty=False):
+    global _redis_client, _redis_retry_after
+    client = _get_redis_client()
+    if client is None:
+        return None
+    try:
+        raw = client.get(_redis_key(include_empty))
+        return json.loads(raw) if raw else None
+    except Exception as exc:
+        _redis_client = None
+        _redis_retry_after = time.monotonic() + 10
+        print(f'[DataLoader] Redis read failed, using MySQL: {exc}')
+        return None
+
+
+def _redis_store(data, include_empty=False):
+    global _redis_client, _redis_retry_after
+    client = _get_redis_client()
+    if client is None:
+        return
+    try:
+        client.setex(
+            _redis_key(include_empty),
+            CACHE_TTL,
+            json.dumps(data, ensure_ascii=False, separators=(',', ':'), default=str),
+        )
+    except Exception as exc:
+        _redis_client = None
+        _redis_retry_after = time.monotonic() + 10
+        print(f'[DataLoader] Redis write failed, continuing without shared cache: {exc}')
+
+
+def clear_data_cache():
+    """Clear both local and Redis copies after an explicit data refresh."""
+    global _cache, _cache_time, _empty_cache, _empty_cache_time, _redis_client
+    with _load_all_data_lock:
+        _cache = None
+        _cache_time = 0
+        _empty_cache = None
+        _empty_cache_time = 0
+        client = _get_redis_client()
+        if client is not None:
+            try:
+                client.delete(_redis_key(False), _redis_key(True))
+            except Exception:
+                _redis_client = None
+
+
+def _load_all_data_impl(force=False, include_empty=False):
     """Load dashboard rows; swap workbench can opt into image rows with zero metrics."""
     global _cache, _cache_time, _empty_cache, _empty_cache_time
     cache = _empty_cache if include_empty else _cache
@@ -106,6 +208,17 @@ def load_all_data(force=False, include_empty=False):
     now = time.time()
     if not force and cache is not None and (now - cache_time) < CACHE_TTL:
         return cache
+
+    if not force:
+        shared_cache = _redis_load(include_empty=include_empty)
+        if shared_cache is not None:
+            if include_empty:
+                _empty_cache = shared_cache
+                _empty_cache_time = now
+            else:
+                _cache = shared_cache
+                _cache_time = now
+            return shared_cache
 
     conn = _get_conn()
     cur = conn.cursor()
@@ -156,10 +269,17 @@ def load_all_data(force=False, include_empty=False):
     else:
         _cache = result
         _cache_time = now
+    _redis_store(result, include_empty=include_empty)
 
     print(f"[DataLoader] MySQL → {len(all_records)} rows, {len(products)} products, "
           f"{len(stores)} stores, {len(date_range)} dates")
     return result
+
+
+def load_all_data(force=False, include_empty=False):
+    """Serialize cold-cache reads so concurrent API calls share one MySQL load."""
+    with _load_all_data_lock:
+        return _load_all_data_impl(force=force, include_empty=include_empty)
 
 
 def get_products(data=None):

@@ -1,8 +1,24 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: cetu-dashboard-redis
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   cetu-dashboard:
     image: cetu-dashboard:latest
     build: .
     container_name: cetu-dashboard
+    depends_on:
+      redis:
+        condition: service_healthy
     ports:
       - "8766:8766"
     volumes:
@@ -15,5 +31,11 @@ services:
       MYSQL_USER: "${MYSQL_USER:-root}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:-root}"
       MYSQL_DATABASE: "${MYSQL_DATABASE:-creative testing data}"
+      REDIS_URL: "${REDIS_URL:-redis://redis:6379/0}"
+      DATA_CACHE_TTL: "${DATA_CACHE_TTL:-300}"
+      REDIS_CACHE_PREFIX: "${REDIS_CACHE_PREFIX:-cetu-dashboard:data:v1}"
       SWAP_TASK_DIR: /app/swap_tasks
     restart: unless-stopped
+
+volumes:
+  redis_data:
