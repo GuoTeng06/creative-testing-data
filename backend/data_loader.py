@@ -5,6 +5,7 @@ import os
 import time
 import threading
 import json
+import hashlib
 from collections import defaultdict
 import pymysql
 
@@ -106,7 +107,17 @@ try:
     CACHE_TTL = max(1, int(os.environ.get('DATA_CACHE_TTL', '300')))
 except ValueError:
     CACHE_TTL = 300
+try:
+    SUMMARY_CACHE_TTL = max(60, int(os.environ.get('SUMMARY_CACHE_TTL', '3600')))
+except ValueError:
+    SUMMARY_CACHE_TTL = 3600
 _load_all_data_lock = threading.Lock()
+_swap_snapshot_cache = {}
+_swap_snapshot_lock = threading.Lock()
+_summary_cache = {}
+_summary_cache_lock = threading.Lock()
+_overview_aggregate_cache = {}
+_overview_aggregate_cache_lock = threading.Lock()
 
 # L2 共享缓存：多个 API worker/容器实例可复用同一份 MySQL 数据。
 # Redis 不可用时自动降级为现有的进程内缓存，不影响看板可用性。
@@ -192,10 +203,18 @@ def clear_data_cache():
         _cache_time = 0
         _empty_cache = None
         _empty_cache_time = 0
+        _swap_snapshot_cache.clear()
+        _summary_cache.clear()
+        _overview_aggregate_cache.clear()
         client = _get_redis_client()
         if client is not None:
             try:
                 client.delete(_redis_key(False), _redis_key(True))
+                summary_keys = list(client.scan_iter(match=f'{REDIS_CACHE_PREFIX}:summary:*', count=100))
+                overview_keys = list(client.scan_iter(match=f'{REDIS_CACHE_PREFIX}:overview:*', count=100))
+                keys = summary_keys + overview_keys
+                if keys:
+                    client.delete(*keys)
             except Exception:
                 _redis_client = None
 
@@ -280,6 +299,408 @@ def load_all_data(force=False, include_empty=False):
     """Serialize cold-cache reads so concurrent API calls share one MySQL load."""
     with _load_all_data_lock:
         return _load_all_data_impl(force=force, include_empty=include_empty)
+
+
+def load_summary_aggregate(date_from='', date_to='', store='', brand='', include_empty=False, force=False):
+    """Return the six overview KPIs without materialising the full creative table.
+
+    The old summary path decoded or fetched more than half a million rows just
+    to return a few aggregate numbers.  A cold cache therefore made the first
+    useful paint wait 15-25 seconds.  Let MySQL aggregate the rows and keep the
+    tiny result in memory; detailed endpoints still use the complete snapshot,
+    so this changes latency rather than dashboard semantics.
+    """
+    key = (
+        str(date_from or '').strip(), str(date_to or '').strip(),
+        str(store or '').strip(), str(brand or '').strip(), bool(include_empty),
+    )
+    now = time.time()
+    with _summary_cache_lock:
+        cached = _summary_cache.get(key)
+        if not force and cached and now - cached[0] < SUMMARY_CACHE_TTL:
+            return cached[1]
+        redis_key = f"{REDIS_CACHE_PREFIX}:summary:{hashlib.sha1(json.dumps(key, ensure_ascii=False).encode('utf-8')).hexdigest()}"
+        client = _get_redis_client()
+        if not force and client is not None:
+            try:
+                raw = client.get(redis_key)
+                if raw:
+                    result = json.loads(raw)
+                    _summary_cache[key] = (now, result)
+                    return result
+            except Exception as exc:
+                print(f'[DataLoader] summary Redis read skipped: {exc}')
+
+        clauses = []
+        params = []
+        if not include_empty:
+            clauses.append("(COALESCE(`曝光量`,0) <> 0 OR COALESCE(`交易额(元)`,0) <> 0 OR COALESCE(`点击量`,0) <> 0)")
+        if key[0]:
+            clauses.append("`日期` >= %s")
+            params.append(key[0])
+        if key[1]:
+            clauses.append("`日期` <= %s")
+            params.append(key[1])
+        stores = [item.strip() for item in key[2].split(',') if item.strip()]
+        if stores:
+            clauses.append("`店铺名称` IN (" + ",".join(["%s"] * len(stores)) + ")")
+            params.extend(stores)
+        brands = [item.strip() for item in key[3].split(',') if item.strip()]
+        if brands:
+            clauses.append("COALESCE(NULLIF(TRIM(`品牌`),''),'未标注品牌') IN (" + ",".join(["%s"] * len(brands)) + ")")
+            params.extend(brands)
+        where_sql = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        sql = f"""
+            SELECT
+                COUNT(DISTINCT `商品ID`), COUNT(*), COUNT(DISTINCT `店铺名称`),
+                MIN(`日期`), MAX(`日期`),
+                COALESCE(SUM(`曝光量`),0), COALESCE(SUM(`点击量`),0),
+                COALESCE(SUM(`交易额(元)`),0), COALESCE(SUM(`成交笔数`),0),
+                COALESCE(SUM(`净交易额(元)`),0)
+            FROM `{TABLE}`{where_sql}
+        """
+        conn = _get_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(sql, params)
+            row = cur.fetchone() or (0,) * 10
+        finally:
+            conn.close()
+
+        impressions = int(row[5] or 0)
+        clicks = int(row[6] or 0)
+        orders = int(row[8] or 0)
+        result = {
+            'total_products': int(row[0] or 0),
+            'total_creatives': int(row[1] or 0),
+            'total_stores': int(row[2] or 0),
+            'date_range': [str(row[3] or key[0] or ''), str(row[4] or key[1] or '')],
+            'total_impressions': impressions,
+            'total_clicks': clicks,
+            'total_transaction': round(float(row[7] or 0), 2),
+            'total_orders': orders,
+            'total_net_transaction': round(float(row[9] or 0), 2),
+            'overall_ctr': round(clicks / impressions, 4) if impressions else 0,
+            'overall_conversion': round(orders / clicks, 4) if clicks else 0,
+        }
+        _summary_cache[key] = (now, result)
+        if client is not None:
+            try:
+                client.setex(redis_key, SUMMARY_CACHE_TTL, json.dumps(result, ensure_ascii=False, separators=(',', ':')))
+            except Exception as exc:
+                print(f'[DataLoader] summary Redis write skipped: {exc}')
+        return result
+
+
+def _overview_cache_key(kind, values):
+    payload = json.dumps(values, ensure_ascii=False, separators=(',', ':'), default=str)
+    digest = hashlib.sha1(payload.encode('utf-8')).hexdigest()
+    return f'{REDIS_CACHE_PREFIX}:overview:{kind}:{digest}'
+
+
+def _overview_cache_get(kind, values, force=False):
+    if force:
+        return None
+    key = (kind, tuple(values))
+    now = time.time()
+    with _overview_aggregate_cache_lock:
+        cached = _overview_aggregate_cache.get(key)
+        if cached and now - cached[0] < SUMMARY_CACHE_TTL:
+            return cached[1]
+    client = _get_redis_client()
+    if client is not None:
+        try:
+            raw = client.get(_overview_cache_key(kind, values))
+            if raw:
+                result = json.loads(raw)
+                with _overview_aggregate_cache_lock:
+                    _overview_aggregate_cache[key] = (now, result)
+                return result
+        except Exception as exc:
+            print(f'[DataLoader] overview Redis read skipped: {exc}')
+    return None
+
+
+def _overview_cache_store(kind, values, result):
+    key = (kind, tuple(values))
+    with _overview_aggregate_cache_lock:
+        _overview_aggregate_cache[key] = (time.time(), result)
+    client = _get_redis_client()
+    if client is not None:
+        try:
+            client.setex(
+                _overview_cache_key(kind, values), SUMMARY_CACHE_TTL,
+                json.dumps(result, ensure_ascii=False, separators=(',', ':'), default=str),
+            )
+        except Exception as exc:
+            print(f'[DataLoader] overview Redis write skipped: {exc}')
+    return result
+
+
+def _overview_scope(date_from='', date_to='', store='', brand='', include_empty=False):
+    clauses = []
+    params = []
+    if not include_empty:
+        clauses.append("(COALESCE(`曝光量`,0) <> 0 OR COALESCE(`交易额(元)`,0) <> 0 OR COALESCE(`点击量`,0) <> 0)")
+    if date_from:
+        clauses.append("`日期` >= %s")
+        params.append(str(date_from).strip())
+    if date_to:
+        clauses.append("`日期` <= %s")
+        params.append(str(date_to).strip())
+    stores = [item.strip() for item in str(store or '').split(',') if item.strip()]
+    if stores:
+        clauses.append("`店铺名称` IN (" + ",".join(["%s"] * len(stores)) + ")")
+        params.extend(stores)
+    brands = [item.strip() for item in str(brand or '').split(',') if item.strip()]
+    if brands:
+        clauses.append("COALESCE(NULLIF(TRIM(`品牌`),''),'未标注品牌') IN (" + ",".join(["%s"] * len(brands)) + ")")
+        params.extend(brands)
+    return ((" WHERE " + " AND ".join(clauses)) if clauses else ""), params
+
+
+def load_store_aggregates(date_from='', date_to='', store='', brand='', include_empty=False, force=False):
+    """Aggregate store drill-down rows in MySQL instead of decoding the full table."""
+    values = (
+        str(date_from or '').strip(), str(date_to or '').strip(),
+        str(store or '').strip(), str(brand or '').strip(), bool(include_empty),
+    )
+    cached = _overview_cache_get('stores', values, force=force)
+    if cached is not None:
+        return cached
+    where_sql, params = _overview_scope(*values[:4], include_empty=values[4])
+    sql = f"""
+        SELECT
+            COALESCE(NULLIF(TRIM(`店铺名称`),''),'未命名店铺') AS store_name,
+            COALESCE(SUM(`曝光量`),0) AS total_impressions,
+            COALESCE(SUM(`点击量`),0) AS total_clicks,
+            COALESCE(SUM(`交易额(元)`),0) AS total_transaction,
+            COALESCE(SUM(`成交笔数`),0) AS total_orders,
+            COUNT(*) AS creative_count,
+            COUNT(DISTINCT `商品ID`) AS product_count
+        FROM `{TABLE}`{where_sql}
+        GROUP BY COALESCE(NULLIF(TRIM(`店铺名称`),''),'未命名店铺')
+        ORDER BY total_impressions DESC
+    """
+    conn = _get_conn()
+    try:
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+    finally:
+        conn.close()
+    result = []
+    for row in rows:
+        impressions = int(row.get('total_impressions') or 0)
+        clicks = int(row.get('total_clicks') or 0)
+        orders = int(row.get('total_orders') or 0)
+        result.append({
+            'store_name': str(row.get('store_name') or '未命名店铺'),
+            'total_impressions': impressions,
+            'total_clicks': clicks,
+            'total_transaction': round(float(row.get('total_transaction') or 0), 2),
+            'total_orders': orders,
+            'creative_count': int(row.get('creative_count') or 0),
+            'product_count': int(row.get('product_count') or 0),
+            'ctr': round(clicks / impressions, 4) if impressions else 0,
+            'conversion_rate': round(orders / clicks, 4) if clicks else 0,
+        })
+    return _overview_cache_store('stores', values, result)
+
+
+def load_brand_trends(metric='impressions', date_from='', date_to='', store='', brand='', include_empty=False, force=False):
+    """Return the overview trend from a compact MySQL GROUP BY result."""
+    metric = str(metric or 'impressions').strip()
+    if metric not in {'impressions', 'clicks', 'ctr', 'cvr', 'orders', 'transaction'}:
+        metric = 'impressions'
+    values = (
+        metric, str(date_from or '').strip(), str(date_to or '').strip(),
+        str(store or '').strip(), str(brand or '').strip(), bool(include_empty),
+    )
+    cached = _overview_cache_get('trends', values, force=force)
+    if cached is not None:
+        return cached
+    where_sql, params = _overview_scope(values[1], values[2], values[3], values[4], values[5])
+    sql = f"""
+        SELECT
+            COALESCE(NULLIF(TRIM(`品牌`),''),'未标注品牌') AS brand,
+            `日期` AS date_value,
+            COALESCE(SUM(`曝光量`),0) AS impressions,
+            COALESCE(SUM(`点击量`),0) AS clicks,
+            COALESCE(SUM(`成交笔数`),0) AS orders,
+            COALESCE(SUM(`交易额(元)`),0) AS transaction
+        FROM `{TABLE}`{where_sql}
+        GROUP BY COALESCE(NULLIF(TRIM(`品牌`),''),'未标注品牌'), `日期`
+        ORDER BY `日期`
+    """
+    conn = _get_conn()
+    try:
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    grouped = {}
+    totals = defaultdict(lambda: {'impressions': 0, 'clicks': 0, 'orders': 0, 'transaction': 0.0})
+    dates = set()
+    for row in rows:
+        brand_value = str(row.get('brand') or '未标注品牌')
+        date_value = str(row.get('date_value') or '')
+        if not date_value:
+            continue
+        item = {
+            'impressions': int(row.get('impressions') or 0),
+            'clicks': int(row.get('clicks') or 0),
+            'orders': int(row.get('orders') or 0),
+            'transaction': float(row.get('transaction') or 0),
+        }
+        grouped[(brand_value, date_value)] = item
+        dates.add(date_value)
+        for key in totals[brand_value]:
+            totals[brand_value][key] += item[key]
+
+    def metric_value(item):
+        if metric == 'ctr':
+            return item['clicks'] / item['impressions'] if item['impressions'] else 0
+        if metric == 'cvr':
+            return item['orders'] / item['clicks'] if item['clicks'] else 0
+        return item.get(metric, 0)
+
+    ordered_dates = sorted(dates)
+    ordered_brands = sorted(totals, key=lambda name: metric_value(totals[name]), reverse=True)
+    if not values[4]:
+        ordered_brands = ordered_brands[:8]
+    series = []
+    for brand_value in ordered_brands:
+        points = []
+        for date_value in ordered_dates:
+            item = grouped.get((brand_value, date_value), {'impressions': 0, 'clicks': 0, 'orders': 0, 'transaction': 0})
+            points.append({
+                'date': date_value,
+                'value': round(metric_value(item), 4 if metric in {'ctr', 'cvr'} else 2),
+                'impressions': item['impressions'], 'clicks': item['clicks'],
+                'orders': item['orders'], 'transaction': round(item['transaction'], 2),
+            })
+        series.append({
+            'brand': brand_value,
+            'total': round(metric_value(totals[brand_value]), 4 if metric in {'ctr', 'cvr'} else 2),
+            'points': points,
+        })
+    result = {'metric': metric, 'dates': ordered_dates, 'series': series}
+    return _overview_cache_store('trends', values, result)
+
+
+def load_product_directory(force=False):
+    """Load the lightweight unique product directory without full creative rows."""
+    values = ('metrics',)
+    cached = _overview_cache_get('products', values, force=force)
+    if cached is not None:
+        return cached
+    where_sql, params = _overview_scope(include_empty=False)
+    sql = f"""
+        SELECT `商品ID` AS product_id, MAX(`商品标题`) AS product_title,
+               MAX(`品牌`) AS brand, MAX(`商品编码`) AS product_code,
+               MAX(`店铺名称`) AS store_name
+        FROM `{TABLE}`{where_sql}
+        AND `商品ID` IS NOT NULL AND TRIM(`商品ID`) <> ''
+        GROUP BY `商品ID`
+    """
+    conn = _get_conn()
+    try:
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute(sql, params)
+        result = [{key: str(value or '').strip() for key, value in row.items()} for row in cur.fetchall()]
+    finally:
+        conn.close()
+    return _overview_cache_store('products', values, result)
+
+
+def load_store_directory(force=False):
+    values = ('metrics',)
+    cached = _overview_cache_get('store-directory', values, force=force)
+    if cached is not None:
+        return cached
+    where_sql, params = _overview_scope(include_empty=False)
+    sql = f"""SELECT `店铺名称` AS name, COUNT(*) AS creative_count
+              FROM `{TABLE}`{where_sql}
+              GROUP BY `店铺名称` ORDER BY `店铺名称`"""
+    conn = _get_conn()
+    try:
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute(sql, params)
+        result = [{'name': str(row.get('name') or '未知'), 'creative_count': int(row.get('creative_count') or 0)} for row in cur.fetchall()]
+    finally:
+        conn.close()
+    return _overview_cache_store('store-directory', values, result)
+
+
+def load_date_directory(force=False):
+    values = ('metrics',)
+    cached = _overview_cache_get('dates', values, force=force)
+    if cached is not None:
+        return cached
+    where_sql, params = _overview_scope(include_empty=False)
+    sql = f"SELECT DISTINCT `日期` AS date_value FROM `{TABLE}`{where_sql} ORDER BY `日期`"
+    conn = _get_conn()
+    try:
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute(sql, params)
+        result = [str(row.get('date_value')) for row in cur.fetchall() if row.get('date_value')]
+    finally:
+        conn.close()
+    return _overview_cache_store('dates', values, result)
+
+
+def load_swap_snapshot(date='', date_from='', date_to='', force=False):
+    """Load only the rows needed by the swap-workbench product directory.
+
+    The old product endpoint loaded every historical creative (including all
+    zero-metric rows) and only then kept the newest day for each product.  That
+    made a 40-row page wait on a multi-year table scan and transfer.  The
+    workbench is a current-image workflow, so its default scope is the newest
+    available data day.  Date filters remain fully supported and are pushed to
+    MySQL before rows are transferred.
+    """
+    requested = (str(date or '').strip(), str(date_from or '').strip(), str(date_to or '').strip())
+    now = time.time()
+    with _swap_snapshot_lock:
+        cached = _swap_snapshot_cache.get(requested)
+        if not force and cached and now - cached[0] < CACHE_TTL:
+            return cached[1]
+
+        conn = _get_conn()
+        cur = conn.cursor()
+        exact_date, range_from, range_to = requested
+        if exact_date:
+            where_sql = " WHERE `日期` = %s"
+            params = [exact_date]
+        elif range_from or range_to:
+            clauses = []
+            params = []
+            if range_from:
+                clauses.append("`日期` >= %s")
+                params.append(range_from)
+            if range_to:
+                clauses.append("`日期` <= %s")
+                params.append(range_to)
+            where_sql = " WHERE " + " AND ".join(clauses)
+        else:
+            # Use the newest imported business day. This is also the day shown
+            # by the unfiltered workbench, and avoids loading historical images.
+            cur.execute(f"SELECT MAX(`日期`) FROM `{TABLE}`")
+            latest_date = cur.fetchone()[0]
+            where_sql = " WHERE `日期` = %s"
+            params = [latest_date]
+
+        cur.execute(f"SELECT * FROM `{TABLE}`{where_sql}", params)
+        columns = [d[0] for d in cur.description]
+        records = [_parse_row(dict(zip(columns, row))) for row in cur.fetchall()]
+        conn.close()
+        result = {'records': records}
+        _swap_snapshot_cache[requested] = (now, result)
+        print(f"[DataLoader] swap snapshot -> {len(records)} rows for {requested or 'latest'}")
+        return result
 
 
 def get_products(data=None):

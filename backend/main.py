@@ -5,20 +5,27 @@
 import sys
 import os
 import json
+import hashlib
 import re
 import random
 import threading
+import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.middleware.gzip import GZipMiddleware
 from data_loader import (
     load_all_data, get_summary, get_products, get_creatives_by_product,
-    get_trends, get_product_aggregates, get_store_aggregates, get_brand_trends
+    get_trends, get_product_aggregates, get_store_aggregates, get_brand_trends,
+    load_swap_snapshot,
+    load_summary_aggregate,
+    load_store_aggregates, load_brand_trends,
+    load_product_directory, load_store_directory, load_date_directory,
 )
 from swap_workbook import build_swap_workbook, read_swap_workbook
 
@@ -30,18 +37,65 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Compress the large inline frontend and JSON responses without changing their
+# contents. This materially reduces transfer time on the first visit.
+app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=6)
+
+
+def _warm_data_cache():
+    """Prime the shared data cache after the web server is ready.
+
+    The first MySQL snapshot can take several seconds on a cold container.
+    Warming it in a daemon thread keeps the health endpoint and frontend
+    shell responsive while making the first dashboard request reuse the same
+    cached snapshot.  Errors are logged and left to the normal request path.
+    """
+    try:
+        # Warm the two first-paint datasets before touching the historical
+        # snapshot. A full-table load competes for the same MySQL connection
+        # and previously pushed a cold /api/summary request above five seconds.
+        load_summary_aggregate()
+        load_swap_snapshot()
+        # Prime the compact overview datasets. Do not load the historical
+        # half-million-row snapshot at startup; detail endpoints fetch it only
+        # when the user actually opens a product.
+        load_brand_trends()
+        load_store_aggregates()
+        load_store_directory()
+        load_date_directory()
+    except Exception as exc:
+        print(f'[DataLoader] background warmup skipped: {exc}')
+
+
+@app.on_event('startup')
+def start_data_cache_warmup():
+    threading.Thread(target=_warm_data_cache, name='data-cache-warmup', daemon=True).start()
 
 FRONTEND_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend', 'index.html')
+_frontend_content = None
+_frontend_etag = None
+_frontend_cache_lock = threading.Lock()
+
+
+def _get_frontend_content():
+    global _frontend_content, _frontend_etag
+    if _frontend_content is not None:
+        return _frontend_content, _frontend_etag
+    with _frontend_cache_lock:
+        if _frontend_content is None:
+            with open(FRONTEND_PATH, "r", encoding="utf-8") as f:
+                _frontend_content = f.read()
+            digest = hashlib.sha256(_frontend_content.encode("utf-8")).hexdigest()[:24]
+            _frontend_etag = f'"{digest}"'
+    return _frontend_content, _frontend_etag
 
 @app.get("/", response_class=HTMLResponse)
-def serve_frontend():
-    with open(FRONTEND_PATH, "r", encoding="utf-8") as f:
-        content = f.read()
-    resp = HTMLResponse(content=content)
-    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    resp.headers["Pragma"] = "no-cache"
-    resp.headers["Expires"] = "0"
-    return resp
+def serve_frontend(request: Request):
+    content, etag = _get_frontend_content()
+    headers = {"ETag": etag, "Cache-Control": "no-cache", "Vary": "Accept-Encoding"}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return HTMLResponse(content=content, headers=headers)
 
 
 @app.get("/api/summary")
@@ -52,14 +106,15 @@ def api_summary(
     brand: str = Query(None),
     include_empty: bool = Query(False),
 ):
-    data = load_all_data(include_empty=include_empty)
-    return get_summary(data, date_from=date_from, date_to=date_to, store=store, brand=brand)
+    return load_summary_aggregate(
+        date_from=date_from, date_to=date_to, store=store, brand=brand,
+        include_empty=include_empty,
+    )
 
 
 @app.get("/api/products")
 def api_products():
-    data = load_all_data()
-    return get_products(data)
+    return load_product_directory()
 
 
 @app.get("/api/products/aggregates")
@@ -181,6 +236,78 @@ def api_creatives(
     }
 
 
+@app.get("/api/swap-image/replacement-locks")
+def api_swap_replacement_locks(product_id: str = Query(...)):
+    """Return target image slots already used by a non-cancelled swap task.
+
+    A target URL can occur in several historical task files.  The newest
+    active task wins, while cancelled/failed tasks are deliberately ignored
+    so an operator can retry a task that never reached the listener.
+    """
+    wanted_product_id = str(product_id or "").strip()
+    if not wanted_product_id:
+        return {"product_id": "", "locks": {}}
+
+    active_statuses = {"queued", "pending", "claimed", "running", "done"}
+    candidates = []
+    with SWAP_TASK_LOCK:
+        for filename in os.listdir(SWAP_TASK_DIR):
+            # Current tasks live in ``swap_tasks/<job_id>/task.json``;
+            # older deployments stored ``swap_tasks/<job_id>.json`` directly
+            # under the root.  Read both layouts so replacement locks remain
+            # effective across upgrades.
+            is_legacy_json = filename.endswith(".json")
+            is_task_dir = os.path.isdir(os.path.join(SWAP_TASK_DIR, filename))
+            if not is_legacy_json and not is_task_dir:
+                continue
+            try:
+                task = _read_task(filename[:-5] if is_legacy_json else filename)
+            except Exception:
+                continue
+            if not task or task.get("status", "queued") not in active_statuses:
+                continue
+            # A daily snapshot may already have completed before the swap was
+            # submitted. When the replacement has the same URL/content, a
+            # newly-crawled URL can therefore never prove that the slot changed.
+            # Keep the duplicate-submission guard for 72 hours, then release it
+            # automatically so the operator is not locked out forever.
+            if _replacement_lock_expiry(task)[1]:
+                continue
+            candidates.append(task)
+
+    candidates.sort(key=lambda item: str(item.get("created_at", "")), reverse=True)
+    locks = {}
+    for task in candidates:
+        expires_at, _ = _replacement_lock_expiry(task)
+        command = task.get("command") or {}
+        source = command.get("source") or {}
+        source_images = [
+            image for image in (source.get("images") or [])
+            if isinstance(image, dict) and image.get("image_url")
+        ]
+        identity = _identity_from_mapping(task)
+        for target in (command.get("targets") or []):
+            if str(target.get("product_id", "")) != wanted_product_id:
+                continue
+            for index, target_url in enumerate(target.get("replace_image_urls") or []):
+                target_url = str(target_url or "").strip()
+                if not target_url or target_url in locks:
+                    continue
+                source_image = source_images[index] if index < len(source_images) else None
+                locks[target_url] = {
+                    "job_id": str(task.get("job_id", "")),
+                    "status": str(task.get("status", "queued")),
+                    "operator": identity.get("operator", "") or "未知操作人",
+                    "operator_id": identity.get("operator_id", ""),
+                    "created_at": str(task.get("created_at", "")),
+                    "expires_at": expires_at,
+                    "lock_hours": SWAP_REPLACEMENT_LOCK_HOURS,
+                    "source_image_url": str((source_image or {}).get("image_url", "")),
+                    "source_image_type": str((source_image or {}).get("image_type", "")),
+                }
+    return {"product_id": wanted_product_id, "locks": locks}
+
+
 @app.get("/api/trends")
 def api_trends(
     product_id: str = Query(None),
@@ -252,12 +379,7 @@ def api_roi(
 
 @app.get("/api/stores")
 def api_stores():
-    data = load_all_data()
-    store_counts = {}
-    for r in data['records']:
-        s = r.get('store_name', '未知')
-        store_counts[s] = store_counts.get(s, 0) + 1
-    return [{'name': k, 'creative_count': v} for k, v in sorted(store_counts.items())]
+    return load_store_directory()
 
 
 @app.get("/api/stores/aggregates")
@@ -269,8 +391,10 @@ def api_store_aggregates(
     include_empty: bool = Query(False),
 ):
     """按店铺返回概览指标，供 KPI 卡片的明细弹窗使用。"""
-    data = load_all_data(include_empty=include_empty)
-    return get_store_aggregates(data, date_from=date_from, date_to=date_to, store=store, brand=brand)
+    return load_store_aggregates(
+        date_from=date_from, date_to=date_to, store=store, brand=brand,
+        include_empty=include_empty,
+    )
 
 
 @app.get("/api/brands/trends")
@@ -283,21 +407,19 @@ def api_brand_trends(
     include_empty: bool = Query(False),
 ):
     """按品牌返回每日核心指标趋势。"""
-    data = load_all_data(include_empty=include_empty)
-    return get_brand_trends(
-        data,
+    return load_brand_trends(
         metric=metric,
         date_from=date_from,
         date_to=date_to,
         store=store,
         brand=brand,
+        include_empty=include_empty,
     )
 
 
 @app.get("/api/dates")
 def api_dates():
-    data = load_all_data()
-    return data['dates']
+    return load_date_directory()
 
 
 # ===== 换图 =====
@@ -309,13 +431,54 @@ SWAP_TASK_DIR = os.path.abspath(os.getenv(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "swap_tasks"),
 ))
 SWAP_TASK_LEASE_SECONDS = int(os.getenv("SWAP_TASK_LEASE_SECONDS", "180"))
+SWAP_REPLACEMENT_LOCK_HOURS = max(1, int(os.getenv("SWAP_REPLACEMENT_LOCK_HOURS", "72")))
 SWAP_TASK_LOCK = threading.Lock()
 FIXED_SWAP_EXCEL_NAME = "换图任务.xlsx"
+
+
+def _ordered_unique_urls(values):
+    """Normalize selected image URLs without changing the user's selection order.
+
+    The browser sends arrays in click order.  Using a set (or sorting) here
+    would make the two Excel sheets appear unrelated to the order shown in the
+    workbench, so de-duplicate only after recording each first occurrence.
+    """
+    if not isinstance(values, (list, tuple)):
+        return []
+    ordered = []
+    seen = set()
+    for value in values:
+        url = str(value or '').strip()
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        ordered.append(url)
+    return ordered
 os.makedirs(SWAP_TASK_DIR, exist_ok=True)
 
 
 def _utc_now():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _replacement_lock_expiry(task):
+    """Return ``(expiry_iso, expired)`` for a submitted replacement lock.
+
+    Invalid/missing historical timestamps stay locked instead of being
+    silently released. Valid timestamps are normalized to UTC so task files
+    written with ``+08:00`` and older UTC files behave identically.
+    """
+    raw_created_at = str((task or {}).get("created_at", "") or "").strip()
+    if not raw_created_at:
+        return "", False
+    try:
+        created_at = datetime.fromisoformat(raw_created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return "", False
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    expires_at = created_at.astimezone(timezone.utc) + timedelta(hours=SWAP_REPLACEMENT_LOCK_HOURS)
+    return expires_at.isoformat(), datetime.now(timezone.utc) >= expires_at
 
 
 def _task_json_path(job_id):
@@ -383,11 +546,36 @@ def _request_identity(request: Request) -> dict:
     userid = _identity_value(
         request,
         "x-dingtalk-userid",
+        "x-dingtalk-user-id",
+        "x-dingding-userid",
+        "x-operator-id",
+        "x-user-id",
         "x-data-platform-userid",
+        "x-data-platform-user-id",
+    )
+    # Some deployments expose the DingTalk OAuth identifiers under slightly
+    # different header names.  Keep them separate from the real userid so
+    # downstream consumers can diagnose a missing directory mapping instead
+    # of silently writing an empty operator_id to Excel.
+    union_id = _identity_value(
+        request,
+        "x-dingtalk-unionid",
+        "x-dingtalk-union-id",
+        "x-dingding-unionid",
+        "x-dingding-union-id",
+    )
+    open_id = _identity_value(
+        request,
+        "x-dingtalk-openid",
+        "x-dingtalk-open-id",
+        "x-dingding-openid",
+        "x-dingding-open-id",
     )
     username = _identity_value(
         request,
         "x-dingtalk-username",
+        "x-dingtalk-name",
+        "x-user-name",
         "x-data-platform-username",
     )
     return {
@@ -398,6 +586,110 @@ def _request_identity(request: Request) -> dict:
         "dingtalk_username": username,
         "operator": username or userid,
         "operator_id": userid,
+        "dingtalk_unionid": union_id,
+        "dingtalk_openid": open_id,
+    }
+
+
+def _identity_from_mapping(mapping) -> dict:
+    """Normalize identity fields from a task, command, or request payload.
+
+    ``operator_id`` is intentionally kept separate from the display name.  A
+    DingTalk ``openId``/``unionId`` is not treated as a userid here; the proxy
+    should resolve those values to the real DingTalk userid before forwarding
+    the request.
+    """
+    mapping = mapping if isinstance(mapping, dict) else {}
+    # DingTalk wrappers commonly nest the profile under data/user/profile/session.
+    # Flatten those aliases before resolving the canonical userid so the Excel
+    # writer receives the same identity regardless of which shell submitted it.
+    nested = mapping
+    for _ in range(4):
+        if any(mapping.get(key) not in (None, "") for key in (
+            "operator_id", "operatorId", "userId", "userid", "user_id",
+            "dingtalk_userid", "dingtalkUserId", "dingding_userid", "dingdingUserId",
+        )):
+            break
+        candidate = next((mapping.get(key) for key in ("data", "user", "profile", "session", "auth", "result")
+                          if isinstance(mapping.get(key), dict)), None)
+        if not candidate:
+            break
+        nested = candidate
+        mapping = {**candidate, **mapping}
+    command = mapping.get("command") if isinstance(mapping.get("command"), dict) else {}
+    operator_id = str(
+        mapping.get("operator_id")
+        or mapping.get("operatorId")
+        or mapping.get("userId")
+        or mapping.get("userid")
+        or mapping.get("user_id")
+        or mapping.get("dingding_userid")
+        or mapping.get("dingdingUserId")
+        or mapping.get("dingtalk_userid")
+        or mapping.get("dingtalkUserId")
+        or command.get("operator_id")
+        or command.get("operatorId")
+        or command.get("userId")
+        or command.get("userid")
+        or command.get("user_id")
+        or command.get("dingding_userid")
+        or command.get("dingdingUserId")
+        or command.get("dingtalk_userid")
+        or command.get("dingtalkUserId")
+        or ""
+    ).strip()[:100]
+    union_id = str(
+        mapping.get("dingtalk_unionid")
+        or mapping.get("dingding_unionid")
+        or mapping.get("unionId")
+        or mapping.get("unionid")
+        or command.get("dingtalk_unionid")
+        or command.get("dingding_unionid")
+        or command.get("unionId")
+        or command.get("unionid")
+        or ""
+    ).strip()[:100]
+    open_id = str(
+        mapping.get("dingtalk_openid")
+        or mapping.get("dingding_openid")
+        or mapping.get("openId")
+        or mapping.get("openid")
+        or command.get("dingtalk_openid")
+        or command.get("dingding_openid")
+        or command.get("openId")
+        or command.get("openid")
+        or ""
+    ).strip()[:100]
+    username = str(
+        mapping.get("dingding_username")
+        or mapping.get("dingtalk_username")
+        or mapping.get("name")
+        or mapping.get("userName")
+        or mapping.get("username")
+        or mapping.get("nick")
+        or command.get("dingding_username")
+        or command.get("dingtalk_username")
+        or command.get("name")
+        or command.get("userName")
+        or command.get("username")
+        or command.get("nick")
+        or ""
+    ).strip()[:100]
+    operator = str(
+        mapping.get("operator")
+        or command.get("operator")
+        or username
+        or ""
+    ).strip()[:100]
+    return {
+        "dingding_userid": operator_id,
+        "dingding_username": username,
+        "dingtalk_userid": operator_id,
+        "dingtalk_username": username,
+        "operator": operator or operator_id,
+        "operator_id": operator_id,
+        "dingtalk_unionid": union_id,
+        "dingtalk_openid": open_id,
     }
 
 
@@ -580,12 +872,31 @@ def _get_product_images(product_id, data):
     return selected, other_images
 
 
+def _swap_excel_image_type(image, is_main=False):
+    """Return a stable Chinese image-type label for the task workbook."""
+    raw = str((image or {}).get('image_type') or '').strip()
+    if raw in {'主图', '主轮播图'}:
+        return '主轮播图'
+    if raw in {'轮播图', '副轮播图'}:
+        return '副轮播图'
+    if 'SKU' in raw.upper():
+        return 'SKU图'
+    if '自定义' in raw:
+        return '自定义图'
+    return raw or ('主轮播图' if is_main else '副轮播图')
+
+
 @app.post("/api/swap-image/preview")
 def api_swap_preview(payload: dict):
     data = load_all_data(include_empty=True)
     source_id = payload.get('source_product_id', '')
     target_ids = payload.get('target_product_ids', [])
     target_image_urls = payload.get('target_image_urls', {}) or {}
+    def requested_urls_for(product_id):
+        raw = target_image_urls.get(str(product_id))
+        if raw is None:
+            raw = target_image_urls.get(product_id, [])
+        return _ordered_unique_urls(raw)
     if not source_id or not target_ids:
         return {"error": "请选择源商品和至少一个目标商品"}
 
@@ -603,7 +914,7 @@ def api_swap_preview(payload: dict):
         empty_slots = max(0, TOTAL_IMAGE_SLOTS - has_data)
         available_images = target_main + target_other
         available_by_url = {img.get('image_url'): img for img in available_images}
-        requested_urls = list(dict.fromkeys(target_image_urls.get(tid, [])))
+        requested_urls = requested_urls_for(tid)
         selected_images = [available_by_url[url] for url in requested_urls if url in available_by_url]
         targets.append({
             "product_id": tid,
@@ -636,7 +947,12 @@ def api_swap_auto_plan(payload: dict):
     """
     data = load_all_data(include_empty=True)
     source_id = str(payload.get('source_product_id', '') or '')
-    source_urls = list(dict.fromkeys(str(url).strip() for url in (payload.get('source_image_urls') or []) if str(url).strip()))
+    source_urls = _ordered_unique_urls(payload.get('source_image_urls') or [])
+    excluded_target_ids = {
+        str(product_id)
+        for product_id in (payload.get('excluded_target_product_ids') or [])
+        if str(product_id)
+    }
     if not source_id or not source_urls:
         return {"success": False, "error": "请先选择源商品和源图片"}
     source_records = [row for row in data.get('records', []) if str(row.get('product_id', '')) == source_id]
@@ -659,13 +975,11 @@ def api_swap_auto_plan(payload: dict):
     def is_carousel(image):
         return image.get('image_type') in {'轮播图', '副轮播图'}
 
-    requested_main = sum(1 for image in source_images if is_main(image))
-    requested_carousel = sum(1 for image in source_images if is_carousel(image))
-    requested_other = len(source_images) - requested_main - requested_carousel
+    allow_cross_type = bool(payload.get('allow_cross_type', True))
     products = {}
     for record in data.get('records', []):
         pid = str(record.get('product_id', '') or '')
-        if not pid or pid == source_id or record.get('product_code', '') != source_code:
+        if not pid or pid == source_id or pid in excluded_target_ids or record.get('product_code', '') != source_code:
             continue
         products.setdefault(pid, []).append(record)
 
@@ -682,8 +996,11 @@ def api_swap_auto_plan(payload: dict):
         values = list(by_url.values())
         return [x for x in values if is_main(x)], [x for x in values if is_carousel(x)], values
 
-    def pick_zero(images, count, randomize=False):
-        candidates = [image for image in images if (image.get('impressions', 0) or 0) == 0]
+    def pick_zero(images, count, used_urls=None, randomize=False):
+        used_urls = used_urls or set()
+        candidates = [image for image in images
+                      if image.get('image_url') not in used_urls
+                      and (image.get('impressions', 0) or 0) == 0]
         if len(candidates) < count:
             return []
         if randomize:
@@ -694,12 +1011,49 @@ def api_swap_auto_plan(payload: dict):
     for pid, records in products.items():
         main, carousel, all_images = image_groups(records)
         picked = []
-        picked.extend(pick_zero(main, requested_main))
-        picked.extend(pick_zero(carousel, requested_carousel, randomize=True))
-        if requested_other:
-            others = [image for image in all_images if not is_main(image) and not is_carousel(image)]
-            picked.extend(pick_zero(others, requested_other, randomize=True))
-        if len(picked) != len(source_images):
+        cross_type_matches = []
+        used_urls = set()
+        others = [image for image in all_images if not is_main(image) and not is_carousel(image)]
+        incomplete = False
+        # Match each selected source image independently so the source/target
+        # image type is preserved in the plan and can be confirmed by the UI.
+        for source_image in source_images:
+            source_type = source_image.get('image_type', '') or ''
+            if is_main(source_image):
+                preferred, fallback, target_type = main, carousel, '副轮播图'
+                match_kind = 'main_to_carousel'
+                randomize = False
+            elif is_carousel(source_image):
+                preferred, fallback, target_type = carousel, main, '主轮播图'
+                match_kind = 'carousel_to_main'
+                randomize = True
+            else:
+                preferred, fallback, target_type = others, [], source_type or '其他图片'
+                match_kind = 'same_type'
+                randomize = True
+            chosen = pick_zero(preferred, 1, used_urls, randomize=randomize)
+            cross = False
+            if not chosen and allow_cross_type and fallback:
+                chosen = pick_zero(fallback, 1, used_urls, randomize=False)
+                cross = bool(chosen)
+            if not chosen:
+                incomplete = True
+                break
+            image = chosen[0]
+            used_urls.add(image.get('image_url'))
+            picked.append(image)
+            if cross:
+                cross_type_matches.append({
+                    'match_type': match_kind,
+                    'source_image_url': source_image.get('image_url', ''),
+                    'source_image_type': source_type,
+                    'target_image_url': image.get('image_url', ''),
+                    'target_image_type': target_type,
+                    'target_product_id': pid,
+                    'store_name': records[0].get('store_name', ''),
+                    'target_impressions': image.get('impressions', 0) or 0,
+                })
+        if incomplete or len(picked) != len(source_images):
             continue
         # Keep the target entry only when every requested slot is zero-exposure.
         if any((image.get('impressions', 0) or 0) != 0 for image in picked):
@@ -712,8 +1066,10 @@ def api_swap_auto_plan(payload: dict):
             'product_title': records[0].get('product_title', ''),
             'selected_images': [{k: image.get(k, '') for k in ('image_url', 'image_type', 'impressions', 'clicks')} for image in picked],
             'selected_count': len(picked),
+            'cross_type_matches': cross_type_matches,
         })
     targets.sort(key=lambda item: (item.get('store_name', ''), item.get('product_id', '')))
+    cross_type_matches = [match for target in targets for match in target.get('cross_type_matches', [])]
     return {
         'success': True,
         'source_product_id': source_id,
@@ -723,6 +1079,10 @@ def api_swap_auto_plan(payload: dict):
         'target_count': len(targets),
         'targets': targets,
         'target_image_urls': {item['product_id']: [image['image_url'] for image in item['selected_images']] for item in targets},
+        'allow_cross_type': allow_cross_type,
+        'excluded_target_product_ids': sorted(excluded_target_ids),
+        'cross_type_matches': cross_type_matches,
+        'requires_confirmation': any(match.get('match_type') == 'carousel_to_main' for match in cross_type_matches),
     }
 
 
@@ -732,21 +1092,102 @@ def api_swap_execute(payload: dict, request: Request):
     source_image_urls = payload.get('source_image_urls', [])
     target_ids = payload.get('target_product_ids', [])
     target_image_urls = payload.get('target_image_urls', {}) or {}
+    def requested_urls_for(product_id):
+        # JSON object keys are strings; accept both string and numeric IDs so
+        # a stale client cannot silently submit an empty/incorrect selection.
+        raw = target_image_urls.get(str(product_id))
+        if raw is None:
+            raw = target_image_urls.get(product_id, [])
+        return _ordered_unique_urls(raw)
     identity = _request_identity(request)
-    # The trusted proxy identity wins; payload remains a local-development fallback.
-    operator = identity["operator"] or str(payload.get('operator', '') or '').strip()[:100]
-    identity["operator"] = operator
+    # The trusted proxy identity wins; payload remains a local-development
+    # fallback.  Keep the ID separate from the display name so it reaches the
+    # task JSON and both Excel sheets consistently.
+    payload_identity = _identity_from_mapping(payload)
+    if not identity["operator_id"]:
+        identity["operator_id"] = payload_identity["operator_id"]
+        identity["dingding_userid"] = identity["operator_id"]
+        identity["dingtalk_userid"] = identity["operator_id"]
+    if not identity["operator"]:
+        identity["operator"] = payload_identity["operator"]
+    if not identity["dingding_username"]:
+        identity["dingding_username"] = payload_identity["dingding_username"]
+    if not identity["dingtalk_username"]:
+        identity["dingtalk_username"] = payload_identity["dingtalk_username"]
+    if not identity.get("dingtalk_unionid"):
+        identity["dingtalk_unionid"] = payload_identity.get("dingtalk_unionid", "")
+    if not identity.get("dingtalk_openid"):
+        identity["dingtalk_openid"] = payload_identity.get("dingtalk_openid", "")
     if not source_id or not target_ids or not source_image_urls:
         return {"success": False, "error": "缺少参数"}
+    # Do not create an Excel task that can never identify its operator.  Older
+    # builds silently accepted a display name while leaving operator_id blank;
+    # rejecting that case makes a missing DingTalk proxy/header immediately
+    # visible instead of producing an incomplete workbook.
+    if not identity.get("operator_id"):
+        return {"success": False, "error": "未获取到钉钉用户ID，请重新登录后再提交换图任务"}
 
-    data = load_all_data(include_empty=True)
+    data = load_swap_snapshot(date=date, date_from=date_from, date_to=date_to)
     source_main, source_other = _get_product_images(source_id, data)
     source_all = source_main + source_other
     source_by_url = {img['image_url']: img for img in source_all}
-    source_image_urls = list(dict.fromkeys(source_image_urls))
+    source_image_urls = _ordered_unique_urls(source_image_urls)
     source_imgs = [source_by_url[url] for url in source_image_urls if url in source_by_url]
     if not source_imgs:
         return {"success": False, "error": "找不到源图片"}
+
+    # Manual target selection must obey the same safety rule as the automatic
+    # matcher: a secondary carousel image replacing a main image requires an
+    # explicit confirmation.  Previously this check existed only in
+    # /auto-plan, so a manually selected main image could be submitted
+    # immediately and bypass the confirmation dialog.
+    def is_main_image(image):
+        return image.get('image_type') in {'主图', '主轮播图'}
+
+    def is_carousel_image(image):
+        return image.get('image_type') in {'轮播图', '副轮播图'}
+
+    cross_type_matches = []
+    if not payload.get('cross_type_confirmed'):
+        # Image type labels are missing on some imported rows.  The canonical
+        # product image order is still stable: first image is the main
+        # carousel image, following images are secondary carousel images.
+        source_main_url = source_main[0].get('image_url') if source_main else ''
+        for tid in target_ids:
+            target_main, target_other = _get_product_images(tid, data)
+            available_by_url = {img.get('image_url'): img for img in target_main + target_other}
+            target_main_url = target_main[0].get('image_url') if target_main else ''
+            requested_urls = requested_urls_for(tid)
+            for index, url in enumerate(requested_urls):
+                target_image = available_by_url.get(url)
+                if not target_image or index >= len(source_imgs):
+                    continue
+                source_image = source_imgs[index]
+                source_is_secondary = source_image.get('image_url') != source_main_url and (
+                    is_carousel_image(source_image) or source_image.get('image_url') in {
+                        img.get('image_url') for img in source_other
+                    }
+                )
+                target_is_main = target_image.get('image_url') == target_main_url or is_main_image(target_image)
+                if source_is_secondary and target_is_main:
+                    target_info = _get_product_info(tid, data)
+                    cross_type_matches.append({
+                        'match_type': 'carousel_to_main',
+                        'source_image_url': source_image.get('image_url', ''),
+                        'source_image_type': source_image.get('image_type', '') or '副轮播图',
+                        'target_image_url': target_image.get('image_url', ''),
+                        'target_image_type': target_image.get('image_type', '') or '主轮播图',
+                        'target_product_id': tid,
+                        'store_name': target_info.get('store_name', ''),
+                        'target_impressions': target_image.get('impressions', 0) or 0,
+                    })
+        if cross_type_matches:
+            return {
+                "success": False,
+                "requires_confirmation": True,
+                "cross_type_matches": cross_type_matches,
+                "error": "副轮播图替换主图前需要确认",
+            }
 
     source_info = _get_product_info(source_id, data)
     main_rows = [{
@@ -762,7 +1203,8 @@ def api_swap_execute(payload: dict, request: Request):
     for tid in target_ids:
         target_main, target_other = _get_product_images(tid, data)
         available_by_url = {img['image_url']: img for img in target_main + target_other}
-        requested_urls = list(dict.fromkeys(target_image_urls.get(tid, [])))
+        target_main_urls = {img.get('image_url') for img in target_main}
+        requested_urls = requested_urls_for(tid)
         selected_urls = [url for url in requested_urls if url in available_by_url]
         if not requested_urls:
             return {"success": False, "error": f"请选择目标商品 {tid} 需要替换的图片"}
@@ -790,6 +1232,9 @@ def api_swap_execute(payload: dict, request: Request):
             "product_id": tid,
             "image_url": url,
             "product_code": target_info["product_code"],
+            "image_type": _swap_excel_image_type(
+                available_by_url[url], url in target_main_urls
+            ),
             **identity,
         } for url in selected_urls)
 
@@ -835,6 +1280,8 @@ def api_swap_execute(payload: dict, request: Request):
             "status": "queued",
             "message": "任务已提交，等待监听电脑接收 Excel",
             "excel_file": task["excel_file"],
+            "operator": task.get("operator", ""),
+            "operator_id": task.get("operator_id", ""),
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -895,7 +1342,7 @@ def api_swap_task_pending(listener_id: str = Query(default="")):
             "status": task["status"],
             "excel_file": task["excel_file"],
             "excel_url": f"/api/swap-tasks/{task['job_id']}/excel",
-            "operator": task.get("operator", ""),
+            **_identity_from_mapping(task),
             "created_at": task.get("created_at", ""),
             "command": task["command"],
         }
@@ -919,13 +1366,42 @@ def api_swap_task_records(limit: int = Query(default=500, ge=1, le=2000)):
                             excel_path = _legacy_task_excel_path(task.get("excel_file", ""))
                         if excel_path and os.path.exists(excel_path):
                             task["workbook_rows"] = read_swap_workbook(excel_path)
-                            if "operator" not in task:
-                                all_rows = sum(task["workbook_rows"].values(), [])
-                                task["operator"] = next(
-                                    (row.get("operator", "") for row in all_rows
-                                     if row.get("operator")),
-                                    "",
-                                )
+                            all_rows = sum(task["workbook_rows"].values(), [])
+                            row_identity = next(
+                                (row for row in all_rows if isinstance(row, dict) and
+                                 (row.get("operator_id") or row.get("dingding_userid") or
+                                  row.get("dingtalk_userid") or row.get("operator"))),
+                                {},
+                            )
+                            normalized = _identity_from_mapping({
+                                "operator_id": task.get("operator_id") or row_identity.get("operator_id")
+                                or row_identity.get("dingding_userid") or row_identity.get("dingtalk_userid"),
+                                "operator": task.get("operator") or row_identity.get("operator"),
+                                "dingding_username": task.get("dingding_username") or row_identity.get("dingding_username"),
+                                "dingtalk_username": task.get("dingtalk_username") or row_identity.get("dingtalk_username"),
+                            })
+                            for key, value in normalized.items():
+                                if value and not task.get(key):
+                                    task[key] = value
+                            _write_task(task)
+                    # Backfill identity aliases for tasks created by older
+                    # versions, including records whose workbook is already
+                    # present in ``workbook_rows``.
+                    if task and not task.get("operator_id"):
+                        all_rows = sum((task.get("workbook_rows") or {}).values(), [])
+                        row_identity = next(
+                            (row for row in all_rows if isinstance(row, dict) and
+                             (row.get("operator_id") or row.get("dingding_userid") or
+                              row.get("dingtalk_userid"))),
+                            {},
+                        )
+                        operator_id = _identity_from_mapping(row_identity)["operator_id"]
+                        if operator_id:
+                            task.update({
+                                "operator_id": operator_id,
+                                "dingding_userid": operator_id,
+                                "dingtalk_userid": operator_id,
+                            })
                             _write_task(task)
                     records.append(task)
             except Exception:
@@ -985,6 +1461,7 @@ def api_swap_task_queue(limit: int = Query(default=50, ge=1, le=200)):
             "job_id": task["job_id"],
             "status": status,
             "phase": task.get("phase", ""),
+            **_identity_from_mapping(task),
             "created_at": task.get("created_at", ""),
             "updated_at": task.get("updated_at", ""),
             "claimed_by": task.get("claimed_by", ""),
@@ -1105,7 +1582,7 @@ def api_swap_task_detail(job_id: str):
         "updated_at": task.get("updated_at", ""),
         "claimed_at": task.get("claimed_at", ""),
         "claimed_by": task.get("claimed_by", ""),
-        "operator": task.get("operator", ""),
+        **_identity_from_mapping(task),
         "cancelable": status in {"queued", "pending"},
         "source_count": len(source_images),
         "target_count": len(target_details),
@@ -1168,7 +1645,8 @@ def api_swap_task_status(job_id: str, payload: dict):
             return {"success": False, "error": "Invalid status"}
         protected = {
             "job_id", "command", "excel_file", "created_at", "workbook_rows",
-            "operator", "source_count", "target_count",
+            "operator", "operator_id", "dingding_userid", "dingtalk_userid",
+            "dingding_username", "dingtalk_username", "source_count", "target_count",
         }
         for key, value in payload.items():
             if key not in protected:
