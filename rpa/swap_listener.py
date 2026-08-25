@@ -36,6 +36,8 @@ STATE = {
     "last_request_json": "",
     "last_excel": "",
     "last_error": "",
+    "last_operator_id": "",
+    "last_operator": "",
     "downloaded_count": 0,
 }
 
@@ -70,6 +72,59 @@ def request_json(method, path_or_url, payload=None, timeout=15):
     request = Request(url, data=body, headers=headers, method=method)
     with urlopen(request, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _first_non_empty(*values):
+    """Return the first non-empty value as a bounded string."""
+    for value in values:
+        text = str(value or "").strip()
+        if text:
+            return text[:100]
+    return ""
+
+
+def normalize_task_identity(task):
+    """Use operator_id as the canonical ID and support legacy field names."""
+    normalized = dict(task or {})
+    command = normalized.get("command") if isinstance(normalized.get("command"), dict) else {}
+
+    operator_id = _first_non_empty(
+        normalized.get("operator_id"),
+        normalized.get("dingding_userid"),
+        normalized.get("dingtalk_userid"),
+        command.get("operator_id"),
+        command.get("dingding_userid"),
+        command.get("dingtalk_userid"),
+    )
+    username = _first_non_empty(
+        normalized.get("dingding_username"),
+        normalized.get("dingtalk_username"),
+        command.get("dingding_username"),
+        command.get("dingtalk_username"),
+        normalized.get("operator"),
+        command.get("operator"),
+    )
+    operator = _first_non_empty(normalized.get("operator"), command.get("operator"), username, operator_id)
+
+    normalized.update({
+        "operator_id": operator_id,
+        "dingding_userid": operator_id,
+        "dingtalk_userid": operator_id,
+        "dingding_username": username,
+        "dingtalk_username": username,
+        "operator": operator,
+    })
+    if command:
+        normalized["command"] = {
+            **command,
+            "operator_id": _first_non_empty(command.get("operator_id"), operator_id),
+            "dingding_userid": _first_non_empty(command.get("dingding_userid"), operator_id),
+            "dingtalk_userid": _first_non_empty(command.get("dingtalk_userid"), operator_id),
+            "dingding_username": _first_non_empty(command.get("dingding_username"), username),
+            "dingtalk_username": _first_non_empty(command.get("dingtalk_username"), username),
+            "operator": _first_non_empty(command.get("operator"), operator),
+        }
+    return normalized
 
 
 def report_status(job_id, status, phase, **extra):
@@ -120,6 +175,7 @@ def download_excel(job_id, excel_url):
 
 
 def process_task(task):
+    task = normalize_task_identity(task)
     job_id = task["job_id"]
     request_json_path = save_task_json(task)
     update_state(
@@ -127,8 +183,13 @@ def process_task(task):
         last_job_id=job_id,
         last_request_json=request_json_path,
         last_error="",
+        last_operator_id=task.get("operator_id", ""),
+        last_operator=task.get("operator", ""),
     )
-    log("job=%s claimed from FIFO queue" % job_id)
+    log(
+        "job=%s claimed from FIFO queue (operator_id=%s, operator=%s)"
+        % (job_id, task.get("operator_id", ""), task.get("operator", ""))
+    )
     output_path = download_excel(job_id, task["excel_url"])
     report_status(
         job_id,
